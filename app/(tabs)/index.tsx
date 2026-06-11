@@ -8,6 +8,7 @@ import { DailySummaryRow } from '@/components/DailySummaryRow';
 import { FastingCard } from '@/components/FastingCard';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTabNavigation } from '@/contexts/TabNavigationContext';
+import { useUserStore } from '@/stores/useUserStore';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -23,6 +24,8 @@ function getTodayLabel() {
 export default function HomeScreen() {
   const c = useThemeColors();
   const { navigateTo } = useTabNavigation();
+  const { profile } = useUserStore();
+  const isProfileIncomplete = !profile.heightCm || !profile.weightKg;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
@@ -44,6 +47,34 @@ export default function HomeScreen() {
             <AppIcon name="Settings" size={20} color={c.inkTertiary} />
           </Pressable>
         </View>
+
+        {/* 프로필 미설정 배너 */}
+        {isProfileIncomplete && (
+          <Pressable
+            onPress={() => router.push('/settings')}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 10,
+              backgroundColor: c.surfaceSubtle,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: c.border,
+              paddingHorizontal: 14,
+              paddingVertical: 12,
+            }}
+          >
+            <AppIcon name="UserCircle" size={18} color={c.inkTertiary} />
+            <View style={{ flex: 1 }}>
+              <AppText variant="caption" tone="secondary" style={{ fontWeight: '600' }}>
+                프로필을 설정하면 칼로리 계산이 가능해요
+              </AppText>
+              <AppText variant="caption" tone="tertiary">
+                키, 몸무게 입력하기 →
+              </AppText>
+            </View>
+          </Pressable>
+        )}
 
         {/* 단식 히어로 카드 */}
         <FastingCard onPress={() => navigateTo(0)} />

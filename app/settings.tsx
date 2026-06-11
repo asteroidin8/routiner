@@ -243,12 +243,29 @@ export default function SettingsScreen() {
             paddingHorizontal: 20,
             paddingVertical: 14,
           }}
-          onPress={() => setIsMale(!(profile.isMale ?? true))}
+          onPress={() => {}}
         >
           <AppText variant="body">성별</AppText>
-          <AppText variant="body" tone="tertiary">
-            {profile.isMale === null ? '미설정' : profile.isMale ? '남성' : '여성'}
-          </AppText>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {([{ label: '남성', value: true }, { label: '여성', value: false }] as const).map(({ label, value }) => (
+              <Pressable
+                key={label}
+                onPress={() => setIsMale(value)}
+                style={{
+                  paddingHorizontal: 14,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: profile.isMale === value ? c.ink : c.border,
+                  backgroundColor: profile.isMale === value ? c.surfaceSubtle : 'transparent',
+                }}
+              >
+                <AppText variant="caption" tone={profile.isMale === value ? 'primary' : 'tertiary'} style={profile.isMale === value ? { fontWeight: '700' } : {}}>
+                  {label}
+                </AppText>
+              </Pressable>
+            ))}
+          </View>
         </Pressable>
 
         {/* 화면 */}

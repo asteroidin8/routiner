@@ -7,6 +7,7 @@ import { TabBarIcon } from '@/components/TabBarIcon';
 import { AppText } from '@/components/AppText';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { TabNavigationContext, type TabIndex } from '@/contexts/TabNavigationContext';
+import { useTodoStore } from '@/stores/useTodoStore';
 
 import FastingScreen from './fasting';
 import RoutineScreen from './routine';
@@ -24,10 +25,13 @@ const TABS = [
 
 const HOME_INDEX = 2;
 
+const TODO_INDEX = 3;
+
 export default function TabLayout() {
   const c = useThemeColors();
   const pagerRef = useRef<PagerView>(null);
   const [activeTab, setActiveTab] = useState(HOME_INDEX);
+  const activeTodoCount = useTodoStore((s) => s.todos.filter((t) => !t.completedAt).length);
 
   function navigateTo(index: TabIndex) {
     pagerRef.current?.setPage(index);
@@ -85,11 +89,34 @@ export default function TabLayout() {
                 gap: 2,
               }}
             >
-              <TabBarIcon
-                name={tab.icon}
-                size={isHome ? 26 : 22}
-                color={isActive ? (c.ink as string) : (c.inkDisabled as string)}
-              />
+              <View style={{ position: 'relative' }}>
+                <TabBarIcon
+                  name={tab.icon}
+                  size={isHome ? 26 : 22}
+                  color={isActive ? (c.ink as string) : (c.inkDisabled as string)}
+                />
+                {/* 투두 미완료 뱃지 */}
+                {i === TODO_INDEX && activeTodoCount > 0 && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: -3,
+                      right: -6,
+                      backgroundColor: c.ink,
+                      borderRadius: 8,
+                      minWidth: 14,
+                      height: 14,
+                      paddingHorizontal: 3,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <AppText style={{ fontSize: 9, fontWeight: '700', color: c.surface }}>
+                      {activeTodoCount > 99 ? '99+' : String(activeTodoCount)}
+                    </AppText>
+                  </View>
+                )}
+              </View>
               <AppText
                 variant="caption"
                 style={{

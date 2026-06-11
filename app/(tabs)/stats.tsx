@@ -8,6 +8,7 @@ import { Divider } from '@/components/Divider';
 import { FastingRecordEditModal } from '@/components/FastingRecordEditModal';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { type FastingRecord, useFastingStore } from '@/stores/useFastingStore';
+import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { useTodoStore } from '@/stores/useTodoStore';
 import {
@@ -30,17 +31,21 @@ function dateStr(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-// ?? ?? ??? ????????????????????????????????????????????????
+// ?? ??? ????
 function MonthGrid({
   year,
   month,
   summaries,
   onSelect,
+  getRoutineCompletedCount,
+  getRoutineTotalCount,
 }: {
   year: number;
   month: number; // 0-indexed
   summaries: DailyFastingSummary[];
   onSelect: (s: DailyFastingSummary) => void;
+  getRoutineCompletedCount: (date: string) => number;
+  getRoutineTotalCount: (date: string) => number;
 }) {
   const c = useThemeColors();
   const dateMap = new Map(summaries.map((s) => [s.date, s]));
@@ -76,6 +81,10 @@ function MonthGrid({
           const summary = dateMap.get(date);
           const isToday = date === today;
           const hasFasting = !!summary;
+          const routineCompleted = getRoutineCompletedCount(date);
+          const routineTotal = getRoutineTotalCount(date);
+          const hasRoutine = routineTotal > 0;
+          const routineRate = hasRoutine ? routineCompleted / routineTotal : 0;
 
           return (
             <Pressable
@@ -90,6 +99,7 @@ function MonthGrid({
                 backgroundColor: hasFasting ? c.surfaceSubtle : 'transparent',
                 alignItems: 'center',
                 justifyContent: 'center',
+                gap: 2,
               }}
             >
               <AppText
@@ -99,6 +109,19 @@ function MonthGrid({
               >
                 {new Date(date + 'T00:00:00').getDate()}
               </AppText>
+              {/* ?? ??? ? */}
+              {hasRoutine && (
+                <View style={{ flexDirection: 'row', gap: 2 }}>
+                  <View
+                    style={{
+                      width: 4,
+                      height: 4,
+                      borderRadius: 2,
+                      backgroundColor: routineRate >= 1 ? c.ink : routineRate > 0 ? c.inkTertiary : c.surfaceMuted,
+                    }}
+                  />
+                </View>
+              )}
             </Pressable>
           );
         })}
@@ -150,7 +173,7 @@ function DayDetailModal({
           <AppText variant="title">{summary.date}</AppText>
         </View>
         <AppText variant="caption" tone="tertiary" style={{ marginBottom: 20 }}>
-          ? {formatMinutes(summary.totalMinutes)} · {summary.count}?
+          ? {formatMinutes(summary.totalMinutes)} ? {summary.count}?
         </AppText>
         <ScrollView showsVerticalScrollIndicator={false}>
           {summary.records.map((r, i) => (
@@ -238,6 +261,7 @@ export default function StatsScreen() {
   const { records, removeRecord, updateRecord } = useFastingStore();
   const { routines } = useRoutineStore();
   const { todos } = useTodoStore();
+  const { getCompletedIds } = useRoutineCompletionStore();
 
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -392,6 +416,17 @@ export default function StatsScreen() {
             month={viewMonth}
             summaries={summaries}
             onSelect={setSelected}
+            getRoutineCompletedCount={(date) => {
+              const dayOfWeek = new Date(date + 'T00:00:00').getDay() as 0|1|2|3|4|5|6;
+              const dayRoutines = routines.filter((r) => r.repeatDays.includes(dayOfWeek));
+              if (dayRoutines.length === 0) return 0;
+              const completedIds = new Set(getCompletedIds(date));
+              return dayRoutines.filter((r) => completedIds.has(r.id)).length;
+            }}
+            getRoutineTotalCount={(date) => {
+              const dayOfWeek = new Date(date + 'T00:00:00').getDay() as 0|1|2|3|4|5|6;
+              return routines.filter((r) => r.repeatDays.includes(dayOfWeek)).length;
+            }}
           />
 
           {records.length === 0 && (

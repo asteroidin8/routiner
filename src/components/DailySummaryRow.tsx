@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import { AppIcon } from './AppIcon';
 import { AppText } from './AppText';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { formatDueDate } from '@/utils/dateFormat';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { useTodoStore } from '@/stores/useTodoStore';
 
@@ -182,6 +183,14 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
                 <AppText variant="body" style={{ flex: 1 }} numberOfLines={1}>
                   {todo.title}
                 </AppText>
+                {todo.dueDate && (() => {
+                  const { label, isOverdue } = formatDueDate(todo.dueDate);
+                  return (
+                    <AppText variant="caption" style={{ color: isOverdue ? '#EF4444' : undefined }} tone={isOverdue ? undefined : 'disabled'}>
+                      {label}
+                    </AppText>
+                  );
+                })()}
               </View>
               {index < Math.min(activeTodos.length, MAX_ITEMS) - 1 && (
                 <View style={{ height: 1, backgroundColor: c.border, marginLeft: 34 }} />
