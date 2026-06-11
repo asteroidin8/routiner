@@ -5,17 +5,27 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'react-native';
 
 import { DatabaseProvider } from '@/db/DatabaseProvider';
+import { useFastingNotification } from '@/hooks/useFastingNotification';
 
-export default function RootLayout() {
+function AppContent() {
   const colorScheme = useColorScheme();
+  useFastingNotification();
 
   return (
-    <DatabaseProvider>
+    <>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
       </Stack>
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <DatabaseProvider>
+      <AppContent />
     </DatabaseProvider>
   );
 }
