@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Pressable, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, TextInput, View } from 'react-native';
 
 import { AppText } from './AppText';
 import { Divider } from './Divider';
@@ -36,10 +36,14 @@ export function RoutineModal({ visible, initial, onSave, onClose }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
-        onPress={onClose}
-      />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1, justifyContent: 'flex-end' }}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          onPress={onClose}
+        />
       <View
         style={{
           backgroundColor: c.surface,
@@ -134,6 +138,7 @@ export function RoutineModal({ visible, initial, onSave, onClose }: Props) {
           </AppText>
         </Pressable>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

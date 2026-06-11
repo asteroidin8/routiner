@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Pressable, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, TextInput, View } from 'react-native';
 
 import { AppText } from './AppText';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -22,19 +22,23 @@ export function TodoModal({ visible, onSave, onClose }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
-        onPress={onClose}
-      />
-      <View
-        style={{
-          backgroundColor: c.surface,
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          paddingHorizontal: 20,
-          paddingBottom: 34,
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1, justifyContent: 'flex-end' }}
       >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          onPress={onClose}
+        />
+        <View
+          style={{
+            backgroundColor: c.surface,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingHorizontal: 20,
+            paddingBottom: 34,
+          }}
+        >
         {/* 핸들 */}
         <View
           style={{
@@ -83,7 +87,8 @@ export function TodoModal({ visible, onSave, onClose }: Props) {
             추가
           </AppText>
         </Pressable>
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
