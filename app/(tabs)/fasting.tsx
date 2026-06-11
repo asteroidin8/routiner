@@ -165,6 +165,15 @@ export default function FastingScreen() {
 
       {/* ── 타이머 (정중앙) ── */}
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+        {status === 'idle' && (
+          <AppText
+            variant="body"
+            tone="tertiary"
+            style={{ textAlign: 'center', lineHeight: 22, marginBottom: 12, paddingHorizontal: 40 }}
+          >
+            {`단식은 나를 리셋하는 시간이에요\n목표를 설정하고 시작해봐요`}
+          </AppText>
+        )}
         <AppText
           variant="display"
           style={{
@@ -173,6 +182,7 @@ export default function FastingScreen() {
             lineHeight: 70,
             fontWeight: '700',
             color: isOverGoal && status === 'fasting' ? '#EF4444' : c.ink,
+            opacity: status === 'idle' ? 0.15 : 1,
           }}
         >
           {formatElapsed(elapsedMs)}

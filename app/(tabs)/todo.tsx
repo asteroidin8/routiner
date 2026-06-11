@@ -81,9 +81,9 @@ export default function TodoScreen() {
   const [editTarget, setEditTarget] = useState<Todo | null>(null);
   const [undoTarget, setUndoTarget] = useState<Todo | null>(null);
 
-  // ??? = completedAt ?? (???? ?? ???? ?? ??? ??)
+  // ?? = completedAt ?? (???? ??? ???? ???? ??)
   const activeTodos = todos.filter((t) => !t.completedAt);
-  // ??? = completedAt ?? (????? ?? ??? ?? ??)
+  // ?? = completedAt ?? (???? ???? ?? ??? ?? ??)
   const completedTodos = todos.filter((t) => !!t.completedAt);
 
   function handleAdd({ title, priority, dueDate }: TodoCreatePayload) {
@@ -146,7 +146,7 @@ export default function TodoScreen() {
           onAdd={() => setAddModalVisible(true)}
         />
         {completedTodos.length === 0 ? (
-          <EmptyState message="??? ??? ???" />
+          <EmptyState message="?? ??? ?? ???" />
         ) : (
           <ScrollView contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
             {completedTodos.map((todo, i) => (
@@ -194,7 +194,7 @@ export default function TodoScreen() {
 
       {!hasTodos ? (
         <EmptyState
-          message="?? ? ?? ??????"
+          message={`?? ?? ?? ????\n?? ? ??? ??? ??`}
           actionLabel="? ? ????"
           onAction={() => setAddModalVisible(true)}
         />
@@ -246,7 +246,6 @@ export default function TodoScreen() {
   );
 }
 
-// ?? ?? ????????????????????????????????????????????????????
 function Header({
   filter,
   setFilter,
@@ -292,7 +291,7 @@ function Header({
                     : {}
                 }
               >
-                {tab === 'active' ? `?? ? ${activeTodos.length}` : `??? ${completedTodos.length}`}
+                {tab === 'active' ? `?? ? ${activeTodos.length}` : `?? ${completedTodos.length}`}
               </AppText>
             </Pressable>
           );
@@ -303,7 +302,6 @@ function Header({
   );
 }
 
-// ?? ? ?? ?????????????????????????????????????????????????
 function EmptyState({
   message,
   actionLabel,
@@ -314,13 +312,13 @@ function EmptyState({
   onAction?: () => void;
 }) {
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-      <AppText variant="body" tone="tertiary">
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10, paddingHorizontal: 40 }}>
+      <AppText variant="body" tone="tertiary" style={{ textAlign: 'center', lineHeight: 22 }}>
         {message}
       </AppText>
       {actionLabel && onAction && (
-        <Pressable onPress={onAction}>
-          <AppText variant="caption" tone="secondary">
+        <Pressable onPress={onAction} style={{ marginTop: 4 }}>
+          <AppText variant="caption" tone="secondary" style={{ textDecorationLine: 'underline' }}>
             {actionLabel}
           </AppText>
         </Pressable>
