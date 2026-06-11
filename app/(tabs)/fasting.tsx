@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { Divider } from '@/components/Divider';
 import { WheelPicker } from '@/components/WheelPicker';
@@ -14,24 +13,44 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useFastingStore } from '@/stores/useFastingStore';
 import { useUserStore } from '@/stores/useUserStore';
 
-const GOAL_HOURS = [12, 14, 16, 18, 20, 24, 36, 48, 72];
+const GOAL_HOURS = Array.from({ length: 72 }, (_, i) => i + 1);
 const PRESETS = [12, 16, 18, 24] as const;
 
-function formatElapsed(ms: number, sign: '+' | '' = '') {
+function formatElapsed(ms: number) {
   const totalSec = Math.floor(Math.abs(ms) / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
-  const base = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  return sign + base;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function formatTime(ts: number) {
-  const d = new Date(ts);
-  const h = d.getHours();
-  const m = d.getMinutes();
-  const ampm = h < 12 ? '오전' : '오후';
-  return `${ampm} ${h % 12 || 12}:${String(m).padStart(2, '0')}`;
+function formatOverElapsed(ms: number) {
+  const totalSec = Math.floor(Math.abs(ms) / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `+${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function formatDatetime(startTs: number, targetTs: number) {
+  const start = new Date(startTs);
+  const target = new Date(targetTs);
+  const startDay = start.getDate();
+  const endDay = target.getDate();
+  const isDiff = startDay !== endDay || start.getMonth() !== target.getMonth();
+
+  function fmt(d: Date, showDay: boolean) {
+    const h = d.getHours();
+    const min = d.getMinutes();
+    const ampm = h < 12 ? '오전' : '오후';
+    const timeStr = `${ampm} ${h % 12 || 12}:${String(min).padStart(2, '0')}`;
+    return showDay ? `${d.getMonth() + 1}/${d.getDate()} ${timeStr}` : timeStr;
+  }
+
+  if (isDiff) {
+    return `${fmt(start, true)} 시작 → ${fmt(target, true)} 완료 예정`;
+  }
+  return `${fmt(start, false)} 시작 → ${fmt(target, false)} 완료 예정`;
 }
 
 export default function FastingScreen() {
@@ -52,7 +71,7 @@ export default function FastingScreen() {
 
   const elapsedMs = status === 'fasting' && startedAt ? now - startedAt : 0;
   const goalMs = goalHours * 3_600_000;
-  const isOverGoal = elapsedMs > goalMs;
+  const isOverGoal = elapsedMs >= goalMs;
   const progress = Math.min(elapsedMs / goalMs, 1);
   const completionTs = startedAt ? startedAt + goalMs : null;
 
@@ -69,6 +88,21 @@ export default function FastingScreen() {
 
   const phaseMessage = status === 'fasting' ? getFastingMessage(elapsedMs) : null;
 
+  function handleAbandon() {
+    Alert.alert(
+      '단식 포기',
+      '정말 포기하시겠어요?\n지금까지의 기록은 자동으로 보존돼요.',
+      [
+        { text: '계속 단식', style: 'cancel' },
+        {
+          text: '포기',
+          style: 'destructive',
+          onPress: () => stopFasting('abandoned'),
+        },
+      ],
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }}>
       <ScrollView
@@ -79,7 +113,8 @@ export default function FastingScreen() {
         <AppText variant="title">단식</AppText>
 
         {/* 타이머 영역 */}
-        <View style={{ alignItems: 'center', gap: 8 }}>
+        <View style={{ alignItems: 'center', gap: 6 }}>
+          {/* 메인 타이머 */}
           <AppText
             variant="display"
             style={{ fontSize: 64, letterSpacing: -3, lineHeight: 72 }}
@@ -87,21 +122,30 @@ export default function FastingScreen() {
             {formatElapsed(elapsedMs)}
           </AppText>
 
-          {isOverGoal && (
-            <AppText variant="body" tone="secondary">
-              {formatElapsed(elapsedMs - goalMs, '+')} 초과
-            </AppText>
+          {/* 초과 표시 */}
+          {isOverGoal && status === 'fasting' && (
+            <View
+              style={{
+                backgroundColor: c.surfaceSubtle,
+                paddingHorizontal: 12,
+                paddingVertical: 4,
+                borderRadius: 8,
+              }}
+            >
+              <AppText variant="caption" tone="secondary" style={{ fontWeight: '600' }}>
+                {formatOverElapsed(elapsedMs - goalMs)} 초과
+              </AppText>
+            </View>
           )}
 
-          {status === 'fasting' && completionTs && !isOverGoal && (
-            <AppText variant="caption" tone="tertiary">
-              {formatTime(completionTs)} 완료 예정
-            </AppText>
-          )}
-
-          {status === 'fasting' && startedAt && (
-            <AppText variant="caption" tone="tertiary">
-              {formatTime(startedAt)} 시작
+          {/* 시작 → 완료 예정 한 줄 표시 */}
+          {status === 'fasting' && startedAt && completionTs && (
+            <AppText
+              variant="caption"
+              tone="tertiary"
+              style={{ textAlign: 'center', marginTop: 2 }}
+            >
+              {formatDatetime(startedAt, completionTs)}
             </AppText>
           )}
         </View>
@@ -109,18 +153,18 @@ export default function FastingScreen() {
         {/* 진행 바 */}
         <View
           style={{
-            height: 2,
+            height: 3,
             backgroundColor: c.surfaceMuted,
-            borderRadius: 1,
+            borderRadius: 2,
             overflow: 'hidden',
           }}
         >
           <View
             style={{
-              height: 2,
+              height: 3,
               width: `${progress * 100}%`,
               backgroundColor: c.ink,
-              borderRadius: 1,
+              borderRadius: 2,
             }}
           />
         </View>
@@ -143,117 +187,121 @@ export default function FastingScreen() {
 
         <Divider />
 
-        {/* 목표 설정 */}
-        <View style={{ gap: 12 }}>
-          <AppText variant="caption" tone="tertiary">
-            목표 시간
-          </AppText>
+        {/* 목표 설정 (단식 중이 아닐 때만) */}
+        {status === 'idle' && (
+          <View style={{ gap: 12 }}>
+            <AppText variant="caption" tone="tertiary">
+              목표 시간
+            </AppText>
 
-          {/* 프리셋 버튼 */}
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {PRESETS.map((h) => (
+            {/* 프리셋 버튼 */}
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {PRESETS.map((h) => (
+                <Pressable
+                  key={h}
+                  onPress={() => setGoalHours(h)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 10,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: goalHours === h ? c.ink : c.border,
+                    backgroundColor: goalHours === h ? c.surfaceSubtle : 'transparent',
+                    alignItems: 'center',
+                  }}
+                >
+                  <AppText
+                    variant="caption"
+                    tone={goalHours === h ? 'primary' : 'tertiary'}
+                    style={goalHours === h ? { fontWeight: '700' } : {}}
+                  >
+                    {h}h
+                  </AppText>
+                </Pressable>
+              ))}
+
+              {/* 직접 입력 */}
               <Pressable
-                key={h}
-                onPress={() => setGoalHours(h)}
+                onPress={() => setPickerVisible(true)}
                 style={{
                   flex: 1,
                   paddingVertical: 10,
                   borderRadius: 10,
                   borderWidth: 1,
-                  borderColor: goalHours === h ? c.ink : c.border,
-                  backgroundColor: goalHours === h ? c.surfaceSubtle : 'transparent',
+                  borderColor: !PRESETS.includes(goalHours as (typeof PRESETS)[number])
+                    ? c.ink
+                    : c.border,
+                  backgroundColor: !PRESETS.includes(goalHours as (typeof PRESETS)[number])
+                    ? c.surfaceSubtle
+                    : 'transparent',
                   alignItems: 'center',
                 }}
               >
                 <AppText
                   variant="caption"
-                  tone={goalHours === h ? 'primary' : 'tertiary'}
-                  style={goalHours === h ? { fontWeight: '700' } : {}}
+                  tone={
+                    !PRESETS.includes(goalHours as (typeof PRESETS)[number]) ? 'primary' : 'tertiary'
+                  }
                 >
-                  {h}시간
+                  직접
                 </AppText>
               </Pressable>
-            ))}
+            </View>
 
-            {/* 직접 버튼 — 휠 피커 열기 */}
-            <Pressable
-              onPress={() => setPickerVisible(true)}
-              style={{
-                flex: 1,
-                paddingVertical: 10,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: !PRESETS.includes(goalHours as typeof PRESETS[number]) ? c.ink : c.border,
-                backgroundColor: !PRESETS.includes(goalHours as typeof PRESETS[number])
-                  ? c.surfaceSubtle
-                  : 'transparent',
-                alignItems: 'center',
-              }}
-            >
-              <AppText
-                variant="caption"
-                tone={!PRESETS.includes(goalHours as typeof PRESETS[number]) ? 'primary' : 'tertiary'}
-              >
-                직접
+            {!PRESETS.includes(goalHours as (typeof PRESETS)[number]) && (
+              <AppText variant="caption" tone="secondary" style={{ textAlign: 'center' }}>
+                목표: {goalHours}시간
               </AppText>
-            </Pressable>
+            )}
           </View>
+        )}
 
-          {!PRESETS.includes(goalHours as typeof PRESETS[number]) && (
-            <AppText variant="caption" tone="secondary" style={{ textAlign: 'center' }}>
-              목표: {goalHours}시간
-            </AppText>
-          )}
-        </View>
-
-        {/* 시작 / 중단 버튼 */}
+        {/* 액션 버튼 */}
         {status === 'idle' ? (
           <Pressable
             onPress={startFasting}
             style={{
               backgroundColor: c.ink,
               borderRadius: 14,
-              paddingVertical: 16,
+              paddingVertical: 18,
               alignItems: 'center',
             }}
           >
-            <AppText variant="body" style={{ color: c.surface, fontWeight: '600' }}>
+            <AppText variant="body" style={{ color: c.surface, fontWeight: '700' }}>
               단식 시작
             </AppText>
           </Pressable>
+        ) : isOverGoal ? (
+          /* 목표 달성 이후: 완료 버튼만 표시 */
+          <Pressable
+            onPress={() => stopFasting('completed')}
+            style={{
+              backgroundColor: c.ink,
+              borderRadius: 14,
+              paddingVertical: 18,
+              alignItems: 'center',
+            }}
+          >
+            <AppText variant="body" style={{ color: c.surface, fontWeight: '700' }}>
+              단식 완료
+            </AppText>
+          </Pressable>
         ) : (
-          <View style={{ gap: 10 }}>
-            <Pressable
-              onPress={() => stopFasting('completed')}
-              style={{
-                backgroundColor: c.ink,
-                borderRadius: 14,
-                paddingVertical: 16,
-                alignItems: 'center',
-              }}
-            >
-              <AppText variant="body" style={{ color: c.surface, fontWeight: '600' }}>
-                단식 완료
-              </AppText>
-            </Pressable>
-            <Pressable
-              onPress={() => stopFasting('abandoned')}
-              style={{
-                borderWidth: 1,
-                borderColor: c.border,
-                borderRadius: 14,
-                paddingVertical: 14,
-                alignItems: 'center',
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <AppIcon name="X" size={15} color={c.inkTertiary} />
-                <AppText variant="body" tone="tertiary">
-                  중도 포기 (기록 보존)
-                </AppText>
-              </View>
-            </Pressable>
-          </View>
+          /* 단식 중 (미달성): 포기 버튼만 표시 */
+          <Pressable
+            onPress={handleAbandon}
+            style={{
+              borderWidth: 1,
+              borderColor: c.border,
+              borderRadius: 14,
+              paddingVertical: 18,
+              alignItems: 'center',
+            }}
+          >
+            <AppText variant="body" tone="tertiary">
+              단식 포기
+            </AppText>
+          </Pressable>
         )}
       </ScrollView>
 
