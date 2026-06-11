@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { Pressable, View } from 'react-native';
+import { formatDueDate } from '@/utils/dateFormat';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -86,11 +87,18 @@ export function TodoItem({ todo, onToggle, onLongPress, onPress }: Props) {
         >
           {todo.title}
         </AppText>
-        {todo.dueDate && !isCompleted && (
-          <AppText variant="caption" tone="disabled">
-            {todo.dueDate}
-          </AppText>
-        )}
+        {todo.dueDate && !isCompleted && (() => {
+          const { label, isOverdue } = formatDueDate(todo.dueDate);
+          return (
+            <AppText
+              variant="caption"
+              style={{ color: isOverdue ? '#EF4444' : undefined }}
+              tone={isOverdue ? undefined : 'disabled'}
+            >
+              {label}
+            </AppText>
+          );
+        })()}
       </View>
 
       {/* 우선순위 점 */}

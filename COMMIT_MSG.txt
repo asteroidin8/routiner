@@ -1,11 +1,11 @@
-feat: 데이터 영속성 및 자정 아카이빙 구현
+feat: UX 개선 모음 - 루틴 완료 지속/D-N 포맷/Undo/뱃지 외
 
-- AsyncStorage 설치 + 모든 Zustand 스토어에 persist 미들웨어 적용
-  (fasting/routine/todo/settings/user 5개 스토어)
-- 앱 재시작해도 데이터 유지
-- useMidnightArchive 훅: 자정 시 완료 투두 아카이브 처리
-  (AppState 포그라운드 복귀 + 자정 타이머 이중 체크)
-- 미완료 투두는 자동 다음 날 이월
-- Todo 타입에 archivedDate 필드 추가
-- 통계 '중요한 일' 카드: 미완료 개수 -> 완료/전체 N/M 포맷 변경
-- 데이터 리셋: clearStorage + setState 병행으로 AsyncStorage까지 완전 초기화
+- 루틴 완료 상태 하루 지속: useRoutineCompletionStore 추가
+  (YYYY-MM-DD:routineId 키로 AsyncStorage 저장, 30일 자동 정리)
+- 투두 마감일 D-N/내일/오늘/D+N 포맷 (빨간색 초과 표시)
+- 스와이프 삭제 후 Undo 스낵바 (3초, 취소 가능) - 투두/루틴 공통
+- 투두 탭바 미완료 개수 뱃지
+- 홈 화면 프로필 미설정 배너 (키/몸무게 없으면 설정 유도)
+- 설정 성별 선택 UI: 토글 → 남성/여성 버튼 방식으로 개선
+- 스와이프 삭제 medium 햅틱 추가
+- 통계 달력 루틴 완료율 점 표시 (미완료: 흐림, 일부: 회색, 완료: 진함)

@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -14,6 +15,7 @@ export function SwipeToDelete({ onDelete, children }: Props) {
   const swipeRef = useRef<Swipeable>(null);
 
   function handleDelete() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     swipeRef.current?.close();
     onDelete();
   }

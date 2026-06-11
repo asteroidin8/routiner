@@ -12,8 +12,10 @@ import { Divider } from '@/components/Divider';
 import { RoutineItem } from '@/components/RoutineItem';
 import { RoutineModal } from '@/components/RoutineModal';
 import { SwipeToDelete } from '@/components/SwipeToDelete';
+import { UndoSnackbar } from '@/components/UndoSnackbar';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { type Routine, type Weekday, useRoutineStore } from '@/stores/useRoutineStore';
+import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
 
 const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -24,11 +26,13 @@ function getTodayDay(): Weekday {
 export default function RoutineScreen() {
   const c = useThemeColors();
   const { routines, addRoutine, updateRoutine, removeRoutine, reorderRoutines } = useRoutineStore();
+  const { toggleCompletion, isCompleted } = useRoutineCompletionStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [editTarget, setEditTarget] = useState<Routine | null>(null);
-  const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [undoTarget, setUndoTarget] = useState<Routine | null>(null);
 
   const today = getTodayDay();
+  const todayStr = new Date().toISOString().slice(0, 10);
   const todayRoutines = routines
     .filter((r) => r.repeatDays.includes(today))
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -61,11 +65,7 @@ export default function RoutineScreen() {
   }
 
   function toggleCompleted(id: string) {
-    setCompleted((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+    toggleCompletion(id, todayStr);
   }
 
   // 드래그 후 전체 순서 재정렬 (오늘·그외 구간 각각 처리)
@@ -86,18 +86,17 @@ export default function RoutineScreen() {
   }
 
   function renderRoutineItem(
-    isCompleted: (id: string) => boolean,
     onToggle: (id: string) => void,
     isToday: boolean,
   ) {
     return function ({ item, drag, isActive }: RenderItemParams<Routine>) {
       return (
         <ScaleDecorator>
-          <SwipeToDelete onDelete={() => removeRoutine(item.id)}>
+          <SwipeToDelete onDelete={() => { setUndoTarget(item); removeRoutine(item.id); }}>
             <View style={{ opacity: isActive ? 0.85 : 1 }}>
               <RoutineItem
                 routine={item}
-                isCompleted={isCompleted(item.id)}
+                isCompleted={isCompleted(item.id, todayStr)}
                 onToggle={() => onToggle(item.id)}
                 onLongPress={drag}
                 onPress={() => openEdit(item)}
@@ -159,11 +158,7 @@ export default function RoutineScreen() {
                   data={todayRoutines}
                   keyExtractor={(r) => r.id}
                   onDragEnd={handleTodayReorder}
-                  renderItem={renderRoutineItem(
-                    (id) => completed.has(id),
-                    toggleCompleted,
-                    true,
-                  )}
+                  renderItem={renderRoutineItem(toggleCompleted, true)}
                   scrollEnabled={false}
                   activationDistance={8}
                 />
@@ -186,11 +181,7 @@ export default function RoutineScreen() {
                   data={otherRoutines}
                   keyExtractor={(r) => r.id}
                   onDragEnd={handleOtherReorder}
-                  renderItem={renderRoutineItem(
-                    () => false,
-                    () => {},
-                    false,
-                  )}
+                  renderItem={renderRoutineItem(() => {}, false)}
                   scrollEnabled={false}
                   activationDistance={8}
                 />
@@ -206,6 +197,12 @@ export default function RoutineScreen() {
         onSave={handleSave}
         onDelete={editTarget ? () => { removeRoutine(editTarget.id); setModalVisible(false); } : undefined}
         onClose={() => setModalVisible(false)}
+      />
+      <UndoSnackbar
+        message="루틴이 삭제됐어요"
+        visible={undoTarget !== null}
+        onUndo={() => undoTarget && addRoutine(undoTarget)}
+        onDismiss={() => setUndoTarget(null)}
       />
     </SafeAreaView>
   );

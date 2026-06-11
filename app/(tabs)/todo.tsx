@@ -13,6 +13,7 @@ import { SwipeToDelete } from '@/components/SwipeToDelete';
 import { TodoEditModal } from '@/components/TodoEditModal';
 import { TodoItem } from '@/components/TodoItem';
 import { type TodoCreatePayload, TodoModal } from '@/components/TodoModal';
+import { UndoSnackbar } from '@/components/UndoSnackbar';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { type Todo, type TodoPriority, useTodoStore } from '@/stores/useTodoStore';
 
@@ -78,6 +79,7 @@ export default function TodoScreen() {
   const [filter, setFilter] = useState<TabFilter>('active');
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [editTarget, setEditTarget] = useState<Todo | null>(null);
+  const [undoTarget, setUndoTarget] = useState<Todo | null>(null);
 
   // ??? = completedAt ?? (???? ?? ???? ?? ??? ??)
   const activeTodos = todos.filter((t) => !t.completedAt);
@@ -115,7 +117,7 @@ export default function TodoScreen() {
     return function ({ item, drag, isActive }: RenderItemParams<Todo>) {
       return (
         <ScaleDecorator>
-          <SwipeToDelete onDelete={() => removeTodo(item.id)}>
+          <SwipeToDelete onDelete={() => { setUndoTarget(item); removeTodo(item.id); }}>
             <View style={{ opacity: isActive ? 0.85 : 1 }}>
               <TodoItem
                 todo={item}
@@ -148,7 +150,7 @@ export default function TodoScreen() {
         ) : (
           <ScrollView contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
             {completedTodos.map((todo, i) => (
-              <SwipeToDelete key={todo.id} onDelete={() => removeTodo(todo.id)}>
+              <SwipeToDelete key={todo.id} onDelete={() => { setUndoTarget(todo); removeTodo(todo.id); }}>
                 <View style={{ paddingHorizontal: 20 }}>
                   <TodoItem
                     todo={todo}
@@ -167,6 +169,12 @@ export default function TodoScreen() {
           onSave={handleEditSave}
           onDelete={handleEditDelete}
           onClose={() => setEditTarget(null)}
+        />
+        <UndoSnackbar
+          message="??? ?????"
+          visible={undoTarget !== null}
+          onUndo={() => undoTarget && addTodo(undoTarget)}
+          onDismiss={() => setUndoTarget(null)}
         />
       </SafeAreaView>
     );
@@ -227,6 +235,12 @@ export default function TodoScreen() {
         onSave={handleEditSave}
         onDelete={handleEditDelete}
         onClose={() => setEditTarget(null)}
+      />
+      <UndoSnackbar
+        message="??? ?????"
+        visible={undoTarget !== null}
+        onUndo={() => undoTarget && addTodo(undoTarget)}
+        onDismiss={() => setUndoTarget(null)}
       />
     </SafeAreaView>
   );
