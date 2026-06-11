@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   Pressable,
   ScrollView,
   TextInput,
@@ -82,11 +84,15 @@ export function WheelPicker({ visible, values, selectedValue, unit, title, onCon
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
-        onPress={onClose}
-      />
-      <View
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1, justifyContent: 'flex-end' }}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          onPress={onClose}
+        />
+        <View
         style={{
           backgroundColor: c.surface,
           borderTopLeftRadius: 20,
@@ -221,7 +227,8 @@ export function WheelPicker({ visible, values, selectedValue, unit, title, onCon
             확인
           </AppText>
         </Pressable>
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
