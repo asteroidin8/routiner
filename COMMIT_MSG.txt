@@ -1,0 +1,7 @@
+﻿프로젝트 초기 설정: Expo blank-typescript 템플릿
+
+- create-expo-app blank-typescript 기반 프로젝트 생성
+- NativeWind v4, tailwindcss 설치
+- Prettier, eslint-config-prettier 설치
+- ESLint (eslint-config-expo) 자동 설정
+- TypeScript strict 모드 활성화
