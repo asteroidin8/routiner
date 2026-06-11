@@ -261,7 +261,7 @@ export default function StatsScreen() {
   const { records, removeRecord, updateRecord } = useFastingStore();
   const { routines } = useRoutineStore();
   const { todos } = useTodoStore();
-  const { getCompletedIds } = useRoutineCompletionStore();
+  const { getCompletedIds, getStreak } = useRoutineCompletionStore();
 
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -293,11 +293,15 @@ export default function StatsScreen() {
         )
       : 0;
 
-  // ? ?? ?? ?
+  // ?? ?? ??
   const todayWeekday = now.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
   const todayRoutines = routines.filter((r) => r.repeatDays.includes(todayWeekday));
+  const maxStreak = routines.reduce((max, r) => {
+    const s = getStreak(r.id, r.repeatDays);
+    return s > max ? s : max;
+  }, 0);
 
-  // ? ?? ?? ?
+  // ?? ?? ??
   const totalTodos = todos.length;
   const completedTodos = todos.filter((t) => t.completedAt !== null).length;
   const totalHighPriority = todos.filter((t) => t.priority === 'high').length;
@@ -342,7 +346,7 @@ export default function StatsScreen() {
         <View style={{ gap: 12 }}>
           <SectionHeader title="??" />
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <SummaryCard label="? ??" value={`${records.length}?`} />
+            <SummaryCard label="?? ??" value={`${records.length}?`} />
             <SummaryCard label="??" value={`${completedFasts}?`} />
             <SummaryCard label="?? ??" value={formatMinutes(avgFastMinutes)} />
           </View>
@@ -354,6 +358,7 @@ export default function StatsScreen() {
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <SummaryCard label="?? ??" value={`${routines.length}?`} />
             <SummaryCard label="?? ??" value={`${todayRoutines.length}?`} />
+            <SummaryCard label="?? ???" value={maxStreak > 0 ? `${maxStreak}?` : '-'} />
           </View>
         </View>
 
@@ -431,7 +436,7 @@ export default function StatsScreen() {
 
           {records.length === 0 && (
             <AppText variant="caption" tone="disabled" style={{ textAlign: 'center' }}>
-              ?? ?? ??? ???
+              ?? ??? ???
             </AppText>
           )}
         </View>
@@ -457,7 +462,7 @@ export default function StatsScreen() {
         }}
         onDelete={() => {
           if (!editingRecord) return;
-          Alert.alert('?? ??', '? ?? ??? ????????', [
+          Alert.alert('?? ??', '? ??? ??????', [
             { text: '??', style: 'cancel' },
             {
               text: '??',
