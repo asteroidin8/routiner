@@ -167,25 +167,16 @@ export default function FastingScreen() {
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8 }}>
         <AppText
           variant="display"
-          style={{ fontSize: 62, letterSpacing: -3, lineHeight: 70, fontWeight: '700' }}
+          style={{
+            fontSize: 62,
+            letterSpacing: -3,
+            lineHeight: 70,
+            fontWeight: '700',
+            color: isOverGoal && status === 'fasting' ? '#EF4444' : c.ink,
+          }}
         >
           {formatElapsed(elapsedMs)}
         </AppText>
-
-        {isOverGoal && status === 'fasting' && (
-          <View
-            style={{
-              backgroundColor: c.surfaceSubtle,
-              paddingHorizontal: 12,
-              paddingVertical: 4,
-              borderRadius: 8,
-            }}
-          >
-            <AppText variant="caption" tone="secondary" style={{ fontWeight: '700' }}>
-              {formatOverElapsed(elapsedMs - goalMs)} 초과
-            </AppText>
-          </View>
-        )}
 
         {/* 타임라인 카드 */}
         {status === 'fasting' && startedAt && completionTs && (() => {
@@ -196,7 +187,7 @@ export default function FastingScreen() {
               {/* 시작 / 완료 예정 */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <View style={{ gap: 2 }}>
-                  <AppText variant="caption" tone="tertiary">시작</AppText>
+                  <AppText variant="caption" style={{ color: c.inkTertiary }}>시작</AppText>
                   <AppText variant="body" style={{ fontWeight: '700', letterSpacing: -0.5 }}>
                     {start.timeLabel}
                   </AppText>
@@ -204,11 +195,18 @@ export default function FastingScreen() {
                 </View>
 
                 <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                  <AppText variant="caption" tone="tertiary">완료 예정</AppText>
-                  <AppText variant="body" style={{ fontWeight: '700', letterSpacing: -0.5 }}>
-                    {end.timeLabel}
+                  <AppText variant="caption" style={{ color: isOverGoal ? '#EF4444' : c.inkTertiary }}>
+                    {isOverGoal ? '부스터' : '완료'}
                   </AppText>
-                  <AppText variant="caption" tone="secondary">{end.dayLabel}</AppText>
+                  <AppText
+                    variant="body"
+                    style={{ fontWeight: '700', letterSpacing: -0.5, color: isOverGoal ? '#EF4444' : c.ink }}
+                  >
+                    {isOverGoal ? formatOverElapsed(elapsedMs - goalMs) : end.timeLabel}
+                  </AppText>
+                  {!isOverGoal && (
+                    <AppText variant="caption" tone="secondary">{end.dayLabel}</AppText>
+                  )}
                 </View>
               </View>
 
@@ -218,7 +216,7 @@ export default function FastingScreen() {
                   style={{
                     height: 3,
                     width: `${progress * 100}%`,
-                    backgroundColor: c.ink,
+                    backgroundColor: isOverGoal ? '#EF4444' : c.ink,
                     borderRadius: 2,
                   }}
                 />
