@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import { AppText } from './AppText';
 import { Divider } from './Divider';
+import { SpringModal } from './SpringModal';
 import { type FastingRecord, type FastingResult } from '@/stores/useFastingStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -45,11 +46,7 @@ export function FastingRecordEditModal({ visible, record, onSave, onDelete, onCl
   if (!record) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
-        onPress={onClose}
-      />
+    <SpringModal visible={visible} onClose={onClose}>
       <View
         style={{
           backgroundColor: c.surface,
@@ -174,6 +171,6 @@ export function FastingRecordEditModal({ visible, record, onSave, onDelete, onCl
           </Pressable>
         </ScrollView>
       </View>
-    </Modal>
+    </SpringModal>
   );
 }

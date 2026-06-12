@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useRef } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -6,11 +7,13 @@ import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { DailySummaryRow } from '@/components/DailySummaryRow';
 import { FastingCard } from '@/components/FastingCard';
+import { useTabNavigation, useTabScrollToTop } from '@/contexts/TabNavigationContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useTabNavigation } from '@/contexts/TabNavigationContext';
+import { getTimeGreeting } from '@/utils/dateFormat';
 import { useUserStore } from '@/stores/useUserStore';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+const TAB_INDEX = 2 as const;
 
 function getTodayLabel() {
   const now = new Date();
@@ -23,6 +26,9 @@ function getTodayLabel() {
 
 export default function HomeScreen() {
   const c = useThemeColors();
+  const scrollRef = useRef<ScrollView>(null);
+  useTabScrollToTop(TAB_INDEX, scrollRef);
+
   const { navigateTo } = useTabNavigation();
   const { profile } = useUserStore();
   const isProfileIncomplete = !profile.heightCm || !profile.weightKg;
@@ -30,25 +36,27 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ padding: 20, gap: 16 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* 헤더 */}
-        <View
-          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-        >
-          <AppText variant="caption" tone="tertiary">
-            {getTodayLabel()}
-          </AppText>
-          <Pressable
-            onPress={() => router.push('/settings')}
-            hitSlop={8}
-          >
-            <AppIcon name="Settings" size={20} color={c.inkTertiary} />
-          </Pressable>
+        <View style={{ gap: 4 }}>
+          <AppText variant="title">{getTimeGreeting()}</AppText>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <AppText variant="caption" tone="tertiary">
+              {getTodayLabel()}
+            </AppText>
+            <Pressable
+              onPress={() => router.push('/settings')}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="설정"
+            >
+              <AppIcon name="Settings" size={20} color={c.inkTertiary} />
+            </Pressable>
+          </View>
         </View>
 
-        {/* 프로필 미설정 배너 */}
         {isProfileIncomplete && (
           <Pressable
             onPress={() => router.push('/settings')}
@@ -63,6 +71,8 @@ export default function HomeScreen() {
               paddingHorizontal: 14,
               paddingVertical: 12,
             }}
+            accessibilityRole="button"
+            accessibilityLabel="프로필 설정하기"
           >
             <AppIcon name="UserCircle" size={18} color={c.inkTertiary} />
             <View style={{ flex: 1 }}>
@@ -76,10 +86,8 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        {/* 단식 히어로 카드 */}
         <FastingCard onPress={() => navigateTo(0)} />
 
-        {/* 루틴·투두 간략 섹션 */}
         <DailySummaryRow
           onRoutinePress={() => navigateTo(1)}
           onTodoPress={() => navigateTo(3)}

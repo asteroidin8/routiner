@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, TextInput, View } from 'react-native';
 
 import { AppText } from './AppText';
 import { Divider } from './Divider';
+import { SpringModal } from './SpringModal';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { Routine, Weekday } from '@/stores/useRoutineStore';
 
@@ -36,15 +37,8 @@ export function RoutineModal({ visible, initial, onSave, onDelete, onClose }: Pr
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1, justifyContent: 'flex-end' }}
-      >
-        <Pressable
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
-          onPress={onClose}
-        />
+    <SpringModal visible={visible} onClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View
         style={{
           backgroundColor: c.surface,
@@ -154,6 +148,6 @@ export function RoutineModal({ visible, initial, onSave, onDelete, onClose }: Pr
         )}
       </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </SpringModal>
   );
 }

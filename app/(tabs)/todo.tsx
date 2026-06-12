@@ -1,28 +1,33 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import DraggableFlatList, {
-  RenderItemParams,
-  ScaleDecorator,
-} from 'react-native-draggable-flatlist';
+import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AnimatedListItem } from '@/components/AnimatedListItem';
 import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
+import { Coachmark } from '@/components/Coachmark';
 import { Divider } from '@/components/Divider';
-import { SwipeToDelete } from '@/components/SwipeToDelete';
+import { DragItemWrapper } from '@/components/DragItemWrapper';
+import { EmptyIllustration } from '@/components/EmptyIllustration';
+import { SwipeActions } from '@/components/SwipeActions';
 import { TodoEditModal } from '@/components/TodoEditModal';
 import { TodoItem } from '@/components/TodoItem';
 import { type TodoCreatePayload, TodoModal } from '@/components/TodoModal';
 import { UndoSnackbar } from '@/components/UndoSnackbar';
+import { useTabScrollToTop } from '@/contexts/TabNavigationContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { type Todo, type TodoPriority, useTodoStore } from '@/stores/useTodoStore';
 
 type TabFilter = 'active' | 'completed';
 
+const TAB_INDEX = 3 as const;
+
 const PRIORITY_SECTIONS: { key: TodoPriority; label: string }[] = [
-  { key: 'high', label: '??' },
-  { key: 'mid', label: '??' },
-  { key: 'low', label: '??' },
+  { key: 'high', label: '높음' },
+  { key: 'mid', label: '보통' },
+  { key: 'low', label: '낮음' },
 ];
 
 function PriorityBadge({ priority }: { priority: TodoPriority }) {
@@ -74,17 +79,21 @@ function SectionHeader({ label, priority, count }: { label: string; priority: To
 
 export default function TodoScreen() {
   const c = useThemeColors();
+  const scrollRef = useRef<ScrollView>(null);
+  useTabScrollToTop(TAB_INDEX, scrollRef);
+
   const { todos, addTodo, updateTodo, completeTodo, uncompleteTodo, removeTodo, reorderTodos } =
     useTodoStore();
+  const { seenHints, markHintSeen } = useSettingsStore();
+
   const [filter, setFilter] = useState<TabFilter>('active');
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [editTarget, setEditTarget] = useState<Todo | null>(null);
   const [undoTarget, setUndoTarget] = useState<Todo | null>(null);
 
-  // ?? = completedAt ?? (???? ??? ???? ???? ??)
   const activeTodos = todos.filter((t) => !t.completedAt);
-  // ?? = completedAt ?? (???? ???? ?? ??? ?? ??)
   const completedTodos = todos.filter((t) => !!t.completedAt);
+  const showSwipeHint = !seenHints.swipeActions && todos.length > 0;
 
   function handleAdd({ title, priority, dueDate }: TodoCreatePayload) {
     const samePriorityCount = todos.filter((t) => t.priority === priority && !t.completedAt).length;
@@ -114,26 +123,60 @@ export default function TodoScreen() {
   }
 
   function renderDraggableItem(priority: TodoPriority) {
-    return function ({ item, drag, isActive }: RenderItemParams<Todo>) {
+    return function ({ item, drag, isActive, getIndex }: RenderItemParams<Todo>) {
+      const idx = getIndex?.() ?? 0;
       return (
-        <ScaleDecorator>
-          <SwipeToDelete onDelete={() => { setUndoTarget(item); removeTodo(item.id); }}>
-            <View style={{ opacity: isActive ? 0.85 : 1 }}>
-              <TodoItem
-                todo={item}
-                onToggle={() =>
-                  item.completedAt ? uncompleteTodo(item.id) : completeTodo(item.id)
-                }
-                onLongPress={drag}
-                onPress={() => setEditTarget(item)}
-              />
-              <Divider />
-            </View>
-          </SwipeToDelete>
-        </ScaleDecorator>
+        <AnimatedListItem itemKey={item.id} index={idx}>
+          <DragItemWrapper isActive={isActive}>
+            <SwipeActions
+              onDelete={() => {
+                setUndoTarget(item);
+                removeTodo(item.id);
+              }}
+              onComplete={() => completeTodo(item.id)}
+            >
+              <View>
+                <TodoItem
+                  todo={item}
+                  onToggle={() => completeTodo(item.id)}
+                  onLongPress={drag}
+                  onPress={() => setEditTarget(item)}
+                />
+                <Divider />
+              </View>
+            </SwipeActions>
+          </DragItemWrapper>
+        </AnimatedListItem>
       );
     };
   }
+
+  const modals = (
+    <>
+      <TodoModal visible={addModalVisible} onSave={handleAdd} onClose={() => setAddModalVisible(false)} />
+      <TodoEditModal
+        visible={editTarget !== null}
+        todo={editTarget}
+        onSave={handleEditSave}
+        onDelete={handleEditDelete}
+        onClose={() => setEditTarget(null)}
+      />
+      <UndoSnackbar
+        message="할일이 삭제됐어요"
+        visible={undoTarget !== null}
+        onUndo={() => undoTarget && addTodo(undoTarget)}
+        onDismiss={() => setUndoTarget(null)}
+      />
+      <Coachmark
+        visible={showSwipeHint && filter === 'active'}
+        message="← 삭제 · 완료 → 스와이프 · 길게 눌러 편집"
+        onDismiss={() => {
+          markHintSeen('swipeActions');
+          markHintSeen('longPressEdit');
+        }}
+      />
+    </>
+  );
 
   if (filter === 'completed') {
     return (
@@ -146,36 +189,33 @@ export default function TodoScreen() {
           onAdd={() => setAddModalVisible(true)}
         />
         {completedTodos.length === 0 ? (
-          <EmptyState message="?? ??? ?? ???" />
+          <EmptyState message="아직 완료한 일이 없어요" variant="todo" />
         ) : (
           <ScrollView contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
             {completedTodos.map((todo, i) => (
-              <SwipeToDelete key={todo.id} onDelete={() => { setUndoTarget(todo); removeTodo(todo.id); }}>
-                <View style={{ paddingHorizontal: 20 }}>
-                  <TodoItem
-                    todo={todo}
-                    onToggle={() => uncompleteTodo(todo.id)}
-                    onPress={() => setEditTarget(todo)}
-                  />
-                  {i < completedTodos.length - 1 && <Divider />}
-                </View>
-              </SwipeToDelete>
+              <AnimatedListItem key={todo.id} itemKey={todo.id} index={i}>
+                <SwipeActions
+                  onDelete={() => {
+                    setUndoTarget(todo);
+                    removeTodo(todo.id);
+                  }}
+                  onComplete={() => uncompleteTodo(todo.id)}
+                  completeLabel="되돌리기"
+                >
+                  <View style={{ paddingHorizontal: 20 }}>
+                    <TodoItem
+                      todo={todo}
+                      onToggle={() => uncompleteTodo(todo.id)}
+                      onPress={() => setEditTarget(todo)}
+                    />
+                    {i < completedTodos.length - 1 && <Divider />}
+                  </View>
+                </SwipeActions>
+              </AnimatedListItem>
             ))}
           </ScrollView>
         )}
-        <TodoEditModal
-          visible={editTarget !== null}
-          todo={editTarget}
-          onSave={handleEditSave}
-          onDelete={handleEditDelete}
-          onClose={() => setEditTarget(null)}
-        />
-        <UndoSnackbar
-          message="??? ?????"
-          visible={undoTarget !== null}
-          onUndo={() => undoTarget && addTodo(undoTarget)}
-          onDismiss={() => setUndoTarget(null)}
-        />
+        {modals}
       </SafeAreaView>
     );
   }
@@ -194,12 +234,17 @@ export default function TodoScreen() {
 
       {!hasTodos ? (
         <EmptyState
-          message={`?? ?? ?? ????\n?? ? ??? ??? ??`}
-          actionLabel="? ? ????"
+          message={`오늘 해낼 일을 적어봐요\n작은 한 걸음이 습관이 돼요`}
+          actionLabel="할 일 추가하기"
           onAction={() => setAddModalVisible(true)}
+          variant="todo"
         />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 32 }}
+        >
           {PRIORITY_SECTIONS.map(({ key, label }) => {
             const items = activeTodos
               .filter((t) => t.priority === key)
@@ -224,24 +269,7 @@ export default function TodoScreen() {
         </ScrollView>
       )}
 
-      <TodoModal
-        visible={addModalVisible}
-        onSave={handleAdd}
-        onClose={() => setAddModalVisible(false)}
-      />
-      <TodoEditModal
-        visible={editTarget !== null}
-        todo={editTarget}
-        onSave={handleEditSave}
-        onDelete={handleEditDelete}
-        onClose={() => setEditTarget(null)}
-      />
-      <UndoSnackbar
-        message="??? ?????"
-        visible={undoTarget !== null}
-        onUndo={() => undoTarget && addTodo(undoTarget)}
-        onDismiss={() => setUndoTarget(null)}
-      />
+      {modals}
     </SafeAreaView>
   );
 }
@@ -272,8 +300,8 @@ function Header({
           paddingBottom: 8,
         }}
       >
-        <AppText variant="title">??</AppText>
-        <Pressable onPress={onAdd} hitSlop={8}>
+        <AppText variant="title">할일</AppText>
+        <Pressable onPress={onAdd} hitSlop={12} accessibilityRole="button" accessibilityLabel="할일 추가">
           <AppIcon name="Plus" size={22} />
         </Pressable>
       </View>
@@ -281,7 +309,13 @@ function Header({
         {(['active', 'completed'] as TabFilter[]).map((tab) => {
           const isActive = filter === tab;
           return (
-            <Pressable key={tab} onPress={() => setFilter(tab)} hitSlop={4}>
+            <Pressable
+              key={tab}
+              onPress={() => setFilter(tab)}
+              hitSlop={8}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+            >
               <AppText
                 variant="caption"
                 tone={isActive ? 'primary' : 'tertiary'}
@@ -291,7 +325,7 @@ function Header({
                     : {}
                 }
               >
-                {tab === 'active' ? `?? ? ${activeTodos.length}` : `?? ${completedTodos.length}`}
+                {tab === 'active' ? `진행 중 ${activeTodos.length}` : `완료 ${completedTodos.length}`}
               </AppText>
             </Pressable>
           );
@@ -306,18 +340,21 @@ function EmptyState({
   message,
   actionLabel,
   onAction,
+  variant = 'todo',
 }: {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
+  variant?: 'todo' | 'routine';
 }) {
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10, paddingHorizontal: 40 }}>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 40 }}>
+      <EmptyIllustration variant={variant} />
       <AppText variant="body" tone="tertiary" style={{ textAlign: 'center', lineHeight: 22 }}>
         {message}
       </AppText>
       {actionLabel && onAction && (
-        <Pressable onPress={onAction} style={{ marginTop: 4 }}>
+        <Pressable onPress={onAction} accessibilityRole="button" accessibilityLabel={actionLabel}>
           <AppText variant="caption" tone="secondary" style={{ textDecorationLine: 'underline' }}>
             {actionLabel}
           </AppText>

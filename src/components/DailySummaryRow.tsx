@@ -3,14 +3,23 @@ import { Pressable, View } from 'react-native';
 import { AppIcon } from './AppIcon';
 import { AppText } from './AppText';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { formatDueDate } from '@/utils/dateFormat';
+import { formatDueDate, getDueDateColor } from '@/utils/dateFormat';
+import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { useTodoStore } from '@/stores/useTodoStore';
 
 const MAX_ITEMS = 3;
+const PRIORITY_ORDER = { high: 0, mid: 1, low: 2 } as const;
 
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function todoSortScore(todo: { dueDate: string | null; priority: 'high' | 'mid' | 'low'; order: number }) {
+  if (!todo.dueDate) return 1000 + PRIORITY_ORDER[todo.priority] * 10 + todo.order;
+  const { urgency } = formatDueDate(todo.dueDate);
+  const urgencyScore = urgency === 'overdue' ? 0 : urgency === 'today' ? 100 : urgency === 'soon' ? 200 : 300;
+  return urgencyScore + PRIORITY_ORDER[todo.priority] * 10 + todo.order;
 }
 
 type Props = {
@@ -22,24 +31,26 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
   const c = useThemeColors();
   const { routines } = useRoutineStore();
   const { todos } = useTodoStore();
+  const { isCompleted } = useRoutineCompletionStore();
 
   const today = getTodayDate();
   const todayDay = new Date().getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
   const todayRoutines = routines
     .filter((r) => r.repeatDays.includes(todayDay))
-    .sort((a, b) => a.order - b.order);
+    .sort((a, b) => {
+      const aDone = isCompleted(a.id, today) ? 1 : 0;
+      const bDone = isCompleted(b.id, today) ? 1 : 0;
+      if (aDone !== bDone) return aDone - bDone;
+      return a.order - b.order;
+    });
 
   const activeTodos = todos
-    .filter((t) => {
-      if (t.completedAt) return false;
-      if (!t.dueDate) return true;
-      return t.dueDate === today;
-    })
-    .sort((a, b) => {
-      const priorityOrder = { high: 0, mid: 1, low: 2 };
-      return priorityOrder[a.priority] - priorityOrder[b.priority] || a.order - b.order;
-    });
+    .filter((t) => !t.completedAt)
+    .sort((a, b) => todoSortScore(a) - todoSortScore(b));
+
+  const allRoutinesDone =
+    todayRoutines.length > 0 && todayRoutines.every((r) => isCompleted(r.id, today));
 
   const hasRoutines = todayRoutines.length > 0;
   const hasTodos = activeTodos.length > 0;
@@ -54,7 +65,6 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
 
   return (
     <View style={{ gap: 12 }}>
-      {/* 오늘의 루틴 */}
       {hasRoutines && (
         <View
           style={{
@@ -74,11 +84,15 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
               paddingHorizontal: 16,
               paddingVertical: 12,
             }}
+            accessibilityRole="button"
+            accessibilityLabel="오늘의 루틴 보기"
           >
-            <AppText variant="body" style={{ fontWeight: '600' }}>오늘의 루틴</AppText>
+            <AppText variant="body" style={{ fontWeight: '600' }}>
+              {allRoutinesDone ? '오늘 루틴 완료' : '오늘의 루틴'}
+            </AppText>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <AppText variant="caption" tone="tertiary">
-                {todayRoutines.length}개
+                {todayRoutines.filter((r) => isCompleted(r.id, today)).length}/{todayRoutines.length}
               </AppText>
               <AppIcon name="ChevronRight" size={14} color={c.inkTertiary} />
             </View>
@@ -86,41 +100,50 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
 
           <View style={{ height: 1, backgroundColor: c.border }} />
 
-          {todayRoutines.slice(0, MAX_ITEMS).map((routine, index) => (
-            <View key={routine.id}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingHorizontal: 16,
-                  paddingVertical: 11,
-                  gap: 10,
-                }}
-              >
+          {todayRoutines.slice(0, MAX_ITEMS).map((routine, index) => {
+            const done = isCompleted(routine.id, today);
+            return (
+              <View key={routine.id}>
                 <View
                   style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 9,
-                    borderWidth: 1.5,
-                    borderColor: c.borderStrong,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 16,
+                    paddingVertical: 11,
+                    gap: 10,
                   }}
-                />
-                <AppText variant="body" style={{ flex: 1 }}>
-                  {routine.name}
-                </AppText>
+                >
+                  <View
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: 9,
+                      borderWidth: 1.5,
+                      borderColor: done ? c.ink : c.borderStrong,
+                      backgroundColor: done ? c.ink : 'transparent',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {done && <AppIcon name="Check" size={10} color={c.surface} strokeWidth={3} />}
+                  </View>
+                  <AppText
+                    variant="body"
+                    style={{ flex: 1, ...(done ? { textDecorationLine: 'line-through' } : {}) }}
+                    tone={done ? 'tertiary' : 'primary'}
+                  >
+                    {routine.name}
+                  </AppText>
+                </View>
+                {index < Math.min(todayRoutines.length, MAX_ITEMS) - 1 && (
+                  <View style={{ height: 1, backgroundColor: c.border, marginLeft: 44 }} />
+                )}
               </View>
-              {index < Math.min(todayRoutines.length, MAX_ITEMS) - 1 && (
-                <View style={{ height: 1, backgroundColor: c.border, marginLeft: 44 }} />
-              )}
-            </View>
-          ))}
+            );
+          })}
 
           {todayRoutines.length > MAX_ITEMS && (
-            <Pressable
-              onPress={onRoutinePress}
-              style={{ paddingHorizontal: 16, paddingVertical: 10 }}
-            >
+            <Pressable onPress={onRoutinePress} style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
               <AppText variant="caption" tone="tertiary">
                 +{todayRoutines.length - MAX_ITEMS}개 더보기
               </AppText>
@@ -129,7 +152,6 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
         </View>
       )}
 
-      {/* 오늘의 투두 */}
       {hasTodos && (
         <View
           style={{
@@ -149,6 +171,8 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
               paddingHorizontal: 16,
               paddingVertical: 12,
             }}
+            accessibilityRole="button"
+            accessibilityLabel="오늘의 할일 보기"
           >
             <AppText variant="body" style={{ fontWeight: '600' }}>오늘의 할 일</AppText>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -183,14 +207,20 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
                 <AppText variant="body" style={{ flex: 1 }} numberOfLines={1}>
                   {todo.title}
                 </AppText>
-                {todo.dueDate && (() => {
-                  const { label, isOverdue } = formatDueDate(todo.dueDate);
-                  return (
-                    <AppText variant="caption" style={{ color: isOverdue ? '#EF4444' : undefined }} tone={isOverdue ? undefined : 'disabled'}>
-                      {label}
-                    </AppText>
-                  );
-                })()}
+                {todo.dueDate &&
+                  (() => {
+                    const { label, urgency } = formatDueDate(todo.dueDate);
+                    const color = getDueDateColor(urgency);
+                    return (
+                      <AppText
+                        variant="caption"
+                        style={color ? { color } : undefined}
+                        tone={color ? undefined : 'disabled'}
+                      >
+                        {label}
+                      </AppText>
+                    );
+                  })()}
               </View>
               {index < Math.min(activeTodos.length, MAX_ITEMS) - 1 && (
                 <View style={{ height: 1, backgroundColor: c.border, marginLeft: 34 }} />
@@ -199,10 +229,7 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
           ))}
 
           {activeTodos.length > MAX_ITEMS && (
-            <Pressable
-              onPress={onTodoPress}
-              style={{ paddingHorizontal: 16, paddingVertical: 10 }}
-            >
+            <Pressable onPress={onTodoPress} style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
               <AppText variant="caption" tone="tertiary">
                 +{activeTodos.length - MAX_ITEMS}개 더보기
               </AppText>

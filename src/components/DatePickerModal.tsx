@@ -4,7 +4,6 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import {
-  Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 
 import { AppText } from './AppText';
+import { SpringModal } from './SpringModal';
 import { Divider } from './Divider';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -179,11 +179,7 @@ export function DatePickerModal({ visible, value, minimumDate, onConfirm, onClos
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
-        onPress={onClose}
-      />
+    <SpringModal visible={visible} onClose={onClose}>
       <View
         style={{
           backgroundColor: c.surface,
@@ -239,6 +235,6 @@ export function DatePickerModal({ visible, value, minimumDate, onConfirm, onClos
           </AppText>
         </Pressable>
       </View>
-    </Modal>
+    </SpringModal>
   );
 }

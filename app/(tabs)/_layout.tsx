@@ -30,7 +30,8 @@ const TODO_INDEX = 3;
 export default function TabLayout() {
   const c = useThemeColors();
   const pagerRef = useRef<PagerView>(null);
-  const [activeTab, setActiveTab] = useState(HOME_INDEX);
+  const [activeTab, setActiveTab] = useState<TabIndex>(HOME_INDEX);
+  const [scrollTick, setScrollTick] = useState<Record<number, number>>({});
   const activeTodoCount = useTodoStore((s) => s.todos.filter((t) => !t.completedAt).length);
 
   function navigateTo(index: TabIndex) {
@@ -38,8 +39,17 @@ export default function TabLayout() {
     setActiveTab(index);
   }
 
+  function scrollToTop(index: TabIndex) {
+    setScrollTick((prev) => ({ ...prev, [index]: (prev[index] ?? 0) + 1 }));
+  }
+
+  function handleTabPress(index: TabIndex) {
+    if (activeTab === index) scrollToTop(index);
+    else navigateTo(index);
+  }
+
   return (
-    <TabNavigationContext.Provider value={{ navigateTo }}>
+    <TabNavigationContext.Provider value={{ navigateTo, scrollTick, scrollToTop }}>
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['bottom']}>
       <PagerView
         ref={pagerRef}
@@ -81,7 +91,10 @@ export default function TabLayout() {
           return (
             <Pressable
               key={tab.key}
-              onPress={() => navigateTo(i as TabIndex)}
+              onPress={() => handleTabPress(i as TabIndex)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+              accessibilityLabel={`${tab.title} 탭`}
               style={{
                 flex: 1,
                 justifyContent: 'center',
