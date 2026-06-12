@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import { Pressable, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -10,6 +9,7 @@ import Animated, {
 import { AppIcon } from './AppIcon';
 import { AppText } from './AppText';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { feedbackComplete, feedbackUncomplete } from '@/utils/microFeedback';
 import type { Routine } from '@/stores/useRoutineStore';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -36,11 +36,8 @@ export function RoutineItem({ routine, isCompleted = false, onToggle, onLongPres
       withSpring(1.15, { duration: 100 }),
       withSpring(1, { duration: 120 }),
     );
-    Haptics.impactAsync(
-      isCompleted
-        ? Haptics.ImpactFeedbackStyle.Light
-        : Haptics.ImpactFeedbackStyle.Medium,
-    ).catch(() => {});
+    if (isCompleted) feedbackUncomplete();
+    else feedbackComplete();
     onToggle?.();
   }
 
@@ -49,20 +46,29 @@ export function RoutineItem({ routine, isCompleted = false, onToggle, onLongPres
       onPress={onPress ?? handleToggle}
       onLongPress={onLongPress}
       delayLongPress={400}
+      accessibilityRole="button"
+      accessibilityLabel={`${routine.name} 루틴${isCompleted ? ', 완료됨' : ''}`}
+      accessibilityHint="길게 눌러 순서 변경"
       style={{
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 14,
         gap: 14,
+        minHeight: 48,
       }}
     >
-      {/* 체크박스 */}
-      <Pressable onPress={handleToggle} hitSlop={8}>
+      <Pressable
+        onPress={handleToggle}
+        hitSlop={12}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isCompleted }}
+        accessibilityLabel={`${routine.name} 완료 토글`}
+      >
         <Animated.View
           style={[
             {
-              width: 22,
-              height: 22,
+              width: 24,
+              height: 24,
               borderRadius: 6,
               borderWidth: 1.5,
               borderColor: isCompleted ? c.ink : c.borderStrong,

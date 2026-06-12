@@ -1,12 +1,15 @@
-import { useState } from 'react';
-import { Alert, Dimensions, Modal, Pressable, ScrollView, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Alert, Dimensions, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { BarChart, type BarChartItem } from '@/components/BarChart';
 import { Divider } from '@/components/Divider';
+import { EmptyIllustration } from '@/components/EmptyIllustration';
 import { FastingRecordEditModal } from '@/components/FastingRecordEditModal';
+import { SpringModal } from '@/components/SpringModal';
+import { useTabScrollToTop } from '@/contexts/TabNavigationContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { type FastingRecord, useFastingStore } from '@/stores/useFastingStore';
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
@@ -19,6 +22,7 @@ import {
   groupFastingByDay,
 } from '@/utils/statsHelper';
 
+const TAB_INDEX = 4 as const;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CELL_SIZE = Math.floor((SCREEN_WIDTH - 40 - 6 * 6) / 7);
 const DAY_LABELS = ['?', '?', '?', '?', '?', '?', '?'];
@@ -50,10 +54,8 @@ function MonthGrid({
   const c = useThemeColors();
   const dateMap = new Map(summaries.map((s) => [s.date, s]));
   const today = todayStr();
-
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-
   const cells: (string | null)[] = [
     ...Array(firstDay).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => dateStr(year, month, i + 1)),
@@ -70,20 +72,14 @@ function MonthGrid({
           </View>
         ))}
       </View>
-
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {cells.map((date, i) => {
-          if (!date) {
-            return <View key={`empty-${i}`} style={{ width: CELL_SIZE, height: CELL_SIZE }} />;
-          }
+          if (!date) return <View key={`empty-${i}`} style={{ width: CELL_SIZE, height: CELL_SIZE }} />;
           const summary = dateMap.get(date);
           const isToday = date === today;
           const hasFasting = !!summary;
-          const routineCompleted = getRoutineCompletedCount(date);
           const routineTotal = getRoutineTotalCount(date);
-          const hasRoutine = routineTotal > 0;
-          const routineRate = hasRoutine ? routineCompleted / routineTotal : 0;
-
+          const routineRate = routineTotal > 0 ? getRoutineCompletedCount(date) / routineTotal : 0;
           return (
             <Pressable
               key={date}
@@ -107,18 +103,16 @@ function MonthGrid({
               >
                 {new Date(date + 'T00:00:00').getDate()}
               </AppText>
-              {hasRoutine && (
-                <View style={{ flexDirection: 'row', gap: 2 }}>
-                  <View
-                    style={{
-                      width: 4,
-                      height: 4,
-                      borderRadius: 2,
-                      backgroundColor:
-                        routineRate >= 1 ? c.ink : routineRate > 0 ? c.inkTertiary : c.surfaceMuted,
-                    }}
-                  />
-                </View>
+              {routineTotal > 0 && (
+                <View
+                  style={{
+                    width: 4,
+                    height: 4,
+                    borderRadius: 2,
+                    backgroundColor:
+                      routineRate >= 1 ? c.ink : routineRate > 0 ? c.inkTertiary : c.surfaceMuted,
+                  }}
+                />
               )}
             </Pressable>
           );
@@ -138,10 +132,8 @@ function DayDetailModal({
   onClose: () => void;
 }) {
   const c = useThemeColors();
-
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} onPress={onClose} />
+    <SpringModal visible onClose={onClose}>
       <View
         style={{
           backgroundColor: c.surface,
@@ -163,17 +155,8 @@ function DayDetailModal({
             marginBottom: 16,
           }}
         />
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 4,
-          }}
-        >
-          <AppText variant="title">{summary.date}</AppText>
-        </View>
-        <AppText variant="caption" tone="tertiary" style={{ marginBottom: 20 }}>
+        <AppText variant="title">{summary.date}</AppText>
+        <AppText variant="caption" tone="tertiary" style={{ marginBottom: 20, marginTop: 4 }}>
           ? {formatMinutes(summary.totalMinutes)} · {summary.count}?
         </AppText>
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -191,17 +174,12 @@ function DayDetailModal({
                 }
                 style={{ paddingVertical: 12, gap: 4 }}
               >
-                <View
-                  style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-                >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <AppText variant="body">
                     {formatMinutes(Math.floor((r.endedAt - r.startedAt) / 60_000))}
                   </AppText>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <AppText
-                      variant="caption"
-                      tone={r.result === 'completed' ? 'secondary' : 'tertiary'}
-                    >
+                    <AppText variant="caption" tone={r.result === 'completed' ? 'secondary' : 'tertiary'}>
                       {r.result === 'completed' ? '??' : '?? ??'}
                     </AppText>
                     <AppIcon name="ChevronRight" size={14} color={c.inkDisabled} />
@@ -216,7 +194,7 @@ function DayDetailModal({
           ))}
         </ScrollView>
       </View>
-    </Modal>
+    </SpringModal>
   );
 }
 
@@ -258,6 +236,9 @@ function SectionHeader({ title }: { title: string }) {
 
 export default function StatsScreen() {
   const c = useThemeColors();
+  const scrollRef = useRef<ScrollView>(null);
+  useTabScrollToTop(TAB_INDEX, scrollRef);
+
   const { records, removeRecord, updateRecord } = useFastingStore();
   const { routines } = useRoutineStore();
   const { todos } = useTodoStore();
@@ -279,7 +260,6 @@ export default function StatsScreen() {
     })),
   );
 
-  // ?? ??
   const completedFasts = records.filter((r) => r.result === 'completed').length;
   const finishedFasts = records.filter((r) => r.endedAt);
   const avgFastMinutes =
@@ -292,21 +272,15 @@ export default function StatsScreen() {
         )
       : 0;
 
-  // ?? ??
   const todayWeekday = now.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
   const todayRoutines = routines.filter((r) => r.repeatDays.includes(todayWeekday));
-  const maxStreak = routines.reduce((max, r) => {
-    const s = getStreak(r.id, r.repeatDays);
-    return s > max ? s : max;
-  }, 0);
+  const maxStreak = routines.reduce((max, r) => Math.max(max, getStreak(r.id, r.repeatDays)), 0);
 
-  // ?? ??
   const completedTodos = todos.filter((t) => t.completedAt !== null).length;
   const totalHighPriority = todos.filter((t) => t.priority === 'high').length;
   const completedHighPriority = todos.filter((t) => t.priority === 'high' && !!t.completedAt).length;
   const completionRate = todos.length > 0 ? Math.round((completedTodos / todos.length) * 100) : 0;
 
-  // ?? 7? ?? ?? ???
   const last7Days: BarChartItem[] = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
@@ -323,24 +297,20 @@ export default function StatsScreen() {
     return { label: WEEKDAY_SHORT[d.getDay()], value: totalHours };
   });
   const hasChartData = last7Days.some((d) => d.value > 0);
+  const isDataEmpty = records.length === 0 && routines.length === 0 && todos.length === 0;
 
-  // ? ?????
   function prevMonth() {
     if (viewMonth === 0) {
       setViewYear((y) => y - 1);
       setViewMonth(11);
-    } else {
-      setViewMonth((m) => m - 1);
-    }
+    } else setViewMonth((m) => m - 1);
   }
   function nextMonth() {
     if (viewYear === now.getFullYear() && viewMonth === now.getMonth()) return;
     if (viewMonth === 11) {
       setViewYear((y) => y + 1);
       setViewMonth(0);
-    } else {
-      setViewMonth((m) => m + 1);
-    }
+    } else setViewMonth((m) => m + 1);
   }
   function goToday() {
     setViewYear(now.getFullYear());
@@ -351,12 +321,24 @@ export default function StatsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ padding: 20, gap: 24 }}
         showsVerticalScrollIndicator={false}
       >
         <AppText variant="title">??</AppText>
 
-        {/* ?? ?? ?? */}
+        {isDataEmpty && (
+          <View style={{ alignItems: 'center', gap: 12, paddingVertical: 24 }}>
+            <EmptyIllustration variant="stats" />
+            <AppText variant="body" tone="tertiary" style={{ textAlign: 'center', lineHeight: 22 }}>
+              ??? ???{'\n'}??? ??? ? ? ???
+            </AppText>
+            <AppText variant="caption" tone="disabled" style={{ textAlign: 'center' }}>
+              ??? ????? ??·??? ??????
+            </AppText>
+          </View>
+        )}
+
         <View style={{ gap: 12 }}>
           <SectionHeader title="??" />
           <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -366,15 +348,15 @@ export default function StatsScreen() {
           </View>
         </View>
 
-        {/* ?? 7? ?? ?? */}
         {hasChartData && (
           <View style={{ gap: 8 }}>
-            <AppText variant="caption" tone="tertiary">?? 7? ?? ??</AppText>
+            <AppText variant="caption" tone="tertiary">
+              ?? 7? ?? ??
+            </AppText>
             <BarChart data={last7Days} width={SCREEN_WIDTH - 40} height={130} unit="h" />
           </View>
         )}
 
-        {/* ?? ?? ?? */}
         <View style={{ gap: 12 }}>
           <SectionHeader title="??" />
           <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -384,7 +366,6 @@ export default function StatsScreen() {
           </View>
         </View>
 
-        {/* ?? ?? ?? */}
         <View style={{ gap: 12 }}>
           <SectionHeader title="??" />
           <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -398,7 +379,6 @@ export default function StatsScreen() {
 
         <Divider />
 
-        {/* ?? ?? */}
         <View style={{ gap: 12 }}>
           <View
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}
@@ -406,11 +386,9 @@ export default function StatsScreen() {
             <Pressable onPress={prevMonth} hitSlop={8} style={{ padding: 4 }}>
               <AppIcon name="ChevronLeft" size={18} color={c.inkSecondary} />
             </Pressable>
-
             <AppText variant="body" style={{ fontWeight: '700', minWidth: 90, textAlign: 'center' }}>
               {viewYear}? {viewMonth + 1}?
             </AppText>
-
             <Pressable
               onPress={nextMonth}
               hitSlop={8}
@@ -419,7 +397,6 @@ export default function StatsScreen() {
             >
               <AppIcon name="ChevronRight" size={18} color={c.inkSecondary} />
             </Pressable>
-
             {!isCurrentMonth && (
               <Pressable
                 onPress={goToday}
@@ -456,7 +433,7 @@ export default function StatsScreen() {
             }}
           />
 
-          {records.length === 0 && (
+          {records.length === 0 && !isDataEmpty && (
             <AppText variant="caption" tone="disabled" style={{ textAlign: 'center' }}>
               ?? ??? ???
             </AppText>

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -12,6 +11,7 @@ import {
 import { AppText } from './AppText';
 import { DatePickerModal } from './DatePickerModal';
 import { Divider } from './Divider';
+import { SpringModal } from './SpringModal';
 import { type Todo, type TodoPriority } from '@/stores/useTodoStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -76,15 +76,8 @@ export function TodoEditModal({ visible, todo, onSave, onDelete, onClose }: Prop
 
   return (
     <>
-      <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1, justifyContent: 'flex-end' }}
-        >
-          <Pressable
-            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
-            onPress={onClose}
-          />
+      <SpringModal visible={visible} onClose={onClose}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <View
             style={{
               backgroundColor: c.surface,
@@ -289,7 +282,7 @@ export function TodoEditModal({ visible, todo, onSave, onDelete, onClose }: Prop
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
-      </Modal>
+      </SpringModal>
 
       {/* 날짜 선택 모달 (네이티브 모듈 없이 순수 JS) */}
       <DatePickerModal

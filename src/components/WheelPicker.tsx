@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Platform,
@@ -13,6 +12,7 @@ import {
 
 import { AppText } from './AppText';
 import { Divider } from './Divider';
+import { SpringModal } from './SpringModal';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 const ITEM_HEIGHT = 48;
@@ -126,15 +126,8 @@ export function WheelPicker({
   const centerIdx = Math.floor(VISIBLE_ITEMS / 2);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1, justifyContent: 'flex-end' }}
-      >
-        <Pressable
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
-          onPress={onClose}
-        />
+    <SpringModal visible={visible} onClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View
           style={{
             backgroundColor: c.surface,
@@ -265,6 +258,6 @@ export function WheelPicker({
           </Pressable>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </SpringModal>
   );
 }

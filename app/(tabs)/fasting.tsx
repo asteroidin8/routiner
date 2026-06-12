@@ -1,19 +1,29 @@
-import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
 import { Divider } from '@/components/Divider';
+import { EmptyIllustration } from '@/components/EmptyIllustration';
 import { HoldToConfirmButton } from '@/components/HoldToConfirmButton';
 import { WheelPicker } from '@/components/WheelPicker';
 import {
   estimateCaloriesBurned,
   getFastingMessage,
 } from '@/constants/fastingMessages';
+import { useTabScrollToTop } from '@/contexts/TabNavigationContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { feedbackBooster, feedbackSuccess } from '@/utils/microFeedback';
 import { useFastingStore } from '@/stores/useFastingStore';
 import { useUserStore } from '@/stores/useUserStore';
+
+const TAB_INDEX = 0 as const;
 
 const GOAL_HOURS = Array.from({ length: 72 }, (_, i) => i + 1);
 const PRESETS = [12, 16, 18, 24] as const;
@@ -67,12 +77,17 @@ function formatTotalHours(ms: number) {
 
 export default function FastingScreen() {
   const c = useThemeColors();
+  const scrollRef = useRef<ScrollView>(null);
+  useTabScrollToTop(TAB_INDEX, scrollRef);
+
   const { status, startedAt, goalHours, setGoalHours, startFasting, stopFasting, records } =
     useFastingStore();
   const { profile } = useUserStore();
   const [now, setNow] = useState(Date.now());
   const [pickerVisible, setPickerVisible] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wasOverGoalRef = useRef(false);
+  const timerScale = useSharedValue(1);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => setNow(Date.now()), 1000);
@@ -86,6 +101,18 @@ export default function FastingScreen() {
   const isOverGoal = elapsedMs >= goalMs;
   const progress = Math.min(elapsedMs / goalMs, 1);
   const completionTs = startedAt ? startedAt + goalMs : null;
+
+  useEffect(() => {
+    if (status === 'fasting' && isOverGoal && !wasOverGoalRef.current) {
+      feedbackBooster();
+      timerScale.value = withSequence(withSpring(1.08, { damping: 8 }), withSpring(1));
+    }
+    wasOverGoalRef.current = status === 'fasting' && isOverGoal;
+  }, [isOverGoal, status, timerScale]);
+
+  const timerAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: timerScale.value }],
+  }));
 
   // 누적 통계
   const completedRecords = records.filter((r) => r.result === 'completed' && r.endedAt);
@@ -112,6 +139,7 @@ export default function FastingScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
+      <ScrollView ref={scrollRef} scrollEnabled={false} contentContainerStyle={{ flexGrow: 1 }}>
       {/* ── 헤더 ── */}
       <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
         <AppText variant="title">단식</AppText>
@@ -166,14 +194,18 @@ export default function FastingScreen() {
       {/* ── 타이머 (정중앙) ── */}
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8 }}>
         {status === 'idle' && (
-          <AppText
-            variant="body"
-            tone="tertiary"
-            style={{ textAlign: 'center', lineHeight: 22, marginBottom: 12, paddingHorizontal: 40 }}
-          >
-            {`단식은 나를 리셋하는 시간이에요\n목표를 설정하고 시작해봐요`}
-          </AppText>
+          <View style={{ alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <EmptyIllustration variant="fasting" size={56} />
+            <AppText
+              variant="body"
+              tone="tertiary"
+              style={{ textAlign: 'center', lineHeight: 22, paddingHorizontal: 40 }}
+            >
+              {`단식은 나를 리셋하는 시간이에요\n목표를 설정하고 시작해봐요`}
+            </AppText>
+          </View>
         )}
+        <Animated.View style={timerAnimStyle}>
         <AppText
           variant="display"
           style={{
@@ -187,6 +219,7 @@ export default function FastingScreen() {
         >
           {formatElapsed(elapsedMs)}
         </AppText>
+        </Animated.View>
 
         {/* 타임라인 카드 */}
         {status === 'fasting' && startedAt && completionTs && (() => {
@@ -338,7 +371,7 @@ export default function FastingScreen() {
         ) : isOverGoal ? (
           <Pressable
             onPress={() => {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+              feedbackSuccess();
               stopFasting('completed');
             }}
             style={{
@@ -373,6 +406,7 @@ export default function FastingScreen() {
         }}
         onClose={() => setPickerVisible(false)}
       />
+      </ScrollView>
     </SafeAreaView>
   );
 }

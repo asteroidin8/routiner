@@ -1,6 +1,5 @@
-import * as Haptics from 'expo-haptics';
 import { Pressable, View } from 'react-native';
-import { formatDueDate } from '@/utils/dateFormat';
+import { formatDueDate, getDueDateColor } from '@/utils/dateFormat';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -11,6 +10,7 @@ import Animated, {
 import { AppIcon } from './AppIcon';
 import { AppText } from './AppText';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { feedbackComplete, feedbackUncomplete } from '@/utils/microFeedback';
 import type { Todo } from '@/stores/useTodoStore';
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -42,11 +42,8 @@ export function TodoItem({ todo, onToggle, onLongPress, onPress }: Props) {
       withSpring(1.15, { duration: 100 }),
       withSpring(1, { duration: 120 }),
     );
-    Haptics.impactAsync(
-      isCompleted
-        ? Haptics.ImpactFeedbackStyle.Light
-        : Haptics.ImpactFeedbackStyle.Medium,
-    ).catch(() => {});
+    if (isCompleted) feedbackUncomplete();
+    else feedbackComplete();
     onToggle?.();
   }
 
@@ -55,15 +52,23 @@ export function TodoItem({ todo, onToggle, onLongPress, onPress }: Props) {
       onPress={onPress}
       onLongPress={onLongPress}
       delayLongPress={400}
-      style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 13, gap: 14 }}
+      accessibilityRole="button"
+      accessibilityLabel={`${todo.title}${isCompleted ? ', 완료됨' : ''}`}
+      accessibilityHint="길게 눌러 순서 변경"
+      style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 13, gap: 14, minHeight: 48 }}
     >
-      {/* 체크박스 */}
-      <Pressable onPress={handleToggle} hitSlop={8}>
+      <Pressable
+        onPress={handleToggle}
+        hitSlop={12}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isCompleted }}
+        accessibilityLabel={`${todo.title} 완료 토글`}
+      >
         <Animated.View
           style={[
             {
-              width: 22,
-              height: 22,
+              width: 24,
+              height: 24,
               borderRadius: 11,
               borderWidth: 1.5,
               borderColor: isCompleted ? c.ink : c.borderStrong,
@@ -88,12 +93,13 @@ export function TodoItem({ todo, onToggle, onLongPress, onPress }: Props) {
           {todo.title}
         </AppText>
         {todo.dueDate && !isCompleted && (() => {
-          const { label, isOverdue } = formatDueDate(todo.dueDate);
+          const { label, urgency } = formatDueDate(todo.dueDate);
+          const color = getDueDateColor(urgency);
           return (
             <AppText
               variant="caption"
-              style={{ color: isOverdue ? '#EF4444' : undefined }}
-              tone={isOverdue ? undefined : 'disabled'}
+              style={color ? { color } : undefined}
+              tone={color ? undefined : 'disabled'}
             >
               {label}
             </AppText>

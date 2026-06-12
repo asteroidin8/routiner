@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -12,6 +11,7 @@ import {
 import { AppText } from './AppText';
 import { DatePickerModal } from './DatePickerModal';
 import { Divider } from './Divider';
+import { SpringModal } from './SpringModal';
 import { type TodoPriority } from '@/stores/useTodoStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -83,15 +83,8 @@ export function TodoModal({ visible, onSave, onClose }: Props) {
 
   return (
     <>
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1, justifyContent: 'flex-end' }}
-      >
-        <Pressable
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
-          onPress={handleClose}
-        />
+    <SpringModal visible={visible} onClose={handleClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View
           style={{
             backgroundColor: c.surface,
@@ -261,7 +254,7 @@ export function TodoModal({ visible, onSave, onClose }: Props) {
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </SpringModal>
 
     <DatePickerModal
       visible={datePickerVisible}

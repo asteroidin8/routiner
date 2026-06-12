@@ -4,15 +4,19 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
+type HintKey = 'swipeActions' | 'longPressEdit';
+
 type SettingsStore = {
   foregroundServiceEnabled: boolean;
   themeMode: ThemeMode;
   routineNotificationsEnabled: boolean;
   todoNotificationsEnabled: boolean;
+  seenHints: Partial<Record<HintKey, boolean>>;
   toggleForegroundService: () => void;
   setThemeMode: (mode: ThemeMode) => void;
   setRoutineNotifications: (enabled: boolean) => void;
   setTodoNotifications: (enabled: boolean) => void;
+  markHintSeen: (key: HintKey) => void;
 };
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -22,11 +26,14 @@ export const useSettingsStore = create<SettingsStore>()(
       themeMode: 'system',
       routineNotificationsEnabled: false,
       todoNotificationsEnabled: false,
+      seenHints: {},
       toggleForegroundService: () =>
         set((s) => ({ foregroundServiceEnabled: !s.foregroundServiceEnabled })),
       setThemeMode: (mode) => set({ themeMode: mode }),
       setRoutineNotifications: (enabled) => set({ routineNotificationsEnabled: enabled }),
       setTodoNotifications: (enabled) => set({ todoNotificationsEnabled: enabled }),
+      markHintSeen: (key) =>
+        set((s) => ({ seenHints: { ...s.seenHints, [key]: true } })),
     }),
     {
       name: 'settings-store',
