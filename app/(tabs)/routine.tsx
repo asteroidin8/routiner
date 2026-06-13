@@ -1,15 +1,13 @@
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedListItem } from '@/components/AnimatedListItem';
-import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { Coachmark } from '@/components/Coachmark';
 import { Divider } from '@/components/Divider';
-import { DragItemWrapper } from '@/components/DragItemWrapper';
 import { EmptyIllustration } from '@/components/EmptyIllustration';
+import { FloatingAddButton } from '@/components/FloatingAddButton';
 import { RoutineItem } from '@/components/RoutineItem';
 import { RoutineModal } from '@/components/RoutineModal';
 import { SwipeActions } from '@/components/SwipeActions';
@@ -19,6 +17,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { type Routine, type Weekday, useRoutineStore } from '@/stores/useRoutineStore';
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
+import { runAfterDragAnimation } from '@/utils/deferredReorder';
 
 const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
 const TAB_INDEX = 1 as const;
@@ -83,47 +82,48 @@ export default function RoutineScreen() {
   }
 
   function handleTodayReorder({ data }: { data: Routine[] }) {
-    reorderRoutines([...data, ...otherRoutines].map((r, i) => ({ ...r, order: i })));
+    runAfterDragAnimation(() => {
+      reorderRoutines([...data, ...otherRoutines].map((r, i) => ({ ...r, order: i })));
+    });
   }
 
   function handleOtherReorder({ data }: { data: Routine[] }) {
-    reorderRoutines([...todayRoutines, ...data].map((r, i) => ({ ...r, order: i })));
+    runAfterDragAnimation(() => {
+      reorderRoutines([...todayRoutines, ...data].map((r, i) => ({ ...r, order: i })));
+    });
   }
 
   function renderRoutineItem(onToggle: (id: string) => void, allowComplete: boolean) {
-    return function ({ item, drag, isActive, getIndex }: RenderItemParams<Routine>) {
-      const idx = getIndex?.() ?? 0;
+    return function ({ item, drag }: RenderItemParams<Routine>) {
       const completed = isCompleted(item.id, todayStr);
 
       return (
-        <AnimatedListItem itemKey={item.id} index={idx} animateLayout={false}>
-          <DragItemWrapper isActive={isActive}>
-            <SwipeActions
-              onDelete={() => {
-                setUndoTarget(item);
-                removeRoutine(item.id);
-              }}
-              onComplete={
-                allowComplete
-                  ? () => {
-                      if (!completed) toggleCompleted(item.id);
-                    }
-                  : undefined
-              }
-            >
-              <View>
-                <RoutineItem
-                  routine={item}
-                  isCompleted={completed}
-                  onToggle={() => onToggle(item.id)}
-                  onLongPress={drag}
-                  onPress={() => openEdit(item)}
-                />
-                <Divider />
-              </View>
-            </SwipeActions>
-          </DragItemWrapper>
-        </AnimatedListItem>
+        <ScaleDecorator activeScale={1.02}>
+          <SwipeActions
+            onDelete={() => {
+              setUndoTarget(item);
+              removeRoutine(item.id);
+            }}
+            onComplete={
+              allowComplete
+                ? () => {
+                    if (!completed) toggleCompleted(item.id);
+                  }
+                : undefined
+            }
+          >
+            <View>
+              <RoutineItem
+                routine={item}
+                isCompleted={completed}
+                onToggle={() => onToggle(item.id)}
+                onLongPress={drag}
+                onPress={() => openEdit(item)}
+              />
+              <Divider />
+            </View>
+          </SwipeActions>
+        </ScaleDecorator>
       );
     };
   }
@@ -143,14 +143,6 @@ export default function RoutineScreen() {
         }}
       >
         <AppText variant="title">루틴</AppText>
-        <Pressable
-          onPress={openAdd}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="루틴 추가"
-        >
-          <AppIcon name="Plus" size={22} />
-        </Pressable>
       </View>
 
       {isEmpty ? (
@@ -169,7 +161,7 @@ export default function RoutineScreen() {
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 32 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
         >
           {allTodayComplete && (
             <View
@@ -238,6 +230,10 @@ export default function RoutineScreen() {
             </>
           )}
         </ScrollView>
+      )}
+
+      {!isEmpty && (
+        <FloatingAddButton onPress={openAdd} accessibilityLabel="루틴 추가" />
       )}
 
       <Coachmark
