@@ -8,9 +8,11 @@ type Props = {
   title: string;
   /** 설정 화면 등 캡션 스타일 */
   variant?: 'bar' | 'caption';
+  /** caption 변형 상단 여백 (기본 spacing.card) */
+  spacingTop?: number;
 };
 
-export function SectionHeader({ title, variant = 'bar' }: Props) {
+export function SectionHeader({ title, variant = 'bar', spacingTop }: Props) {
   const c = useThemeColors();
 
   if (variant === 'caption') {
@@ -19,8 +21,8 @@ export function SectionHeader({ title, variant = 'bar' }: Props) {
         variant="caption"
         tone="tertiary"
         style={{
-          paddingTop: spacing.card,
-          paddingBottom: spacing.sm,
+          paddingTop: spacingTop ?? spacing.section,
+          paddingBottom: 0,
           paddingHorizontal: spacing.screen,
         }}
       >
