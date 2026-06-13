@@ -13,12 +13,11 @@ export function SettingGroup({ children }: Props) {
     <View
       style={{
         marginHorizontal: spacing.screen,
-        backgroundColor: c.surfaceSubtle,
+        backgroundColor: c.surface,
         borderRadius: radius.lg,
         borderWidth: 1,
         borderColor: c.border,
         overflow: 'hidden',
-        marginBottom: spacing.sm,
       }}
     >
       {children}

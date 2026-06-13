@@ -1,114 +1,44 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
+import { DecimalWheelPicker } from '@/components/DecimalWheelPicker';
 import { Divider } from '@/components/Divider';
-import { SectionHeader } from '@/components/SectionHeader';
-import { SettingGroup } from '@/components/SettingGroup';
+import { SettingButtonGroup } from '@/components/SettingButtonGroup';
+import { SettingChoiceRow } from '@/components/SettingChoiceRow';
+import { SettingDestructiveRow } from '@/components/SettingDestructiveRow';
+import { SettingInsetDivider } from '@/components/SettingInsetDivider';
+import { SettingRow } from '@/components/SettingRow';
+import { SettingSection } from '@/components/SettingSection';
+import { SettingToggleRow } from '@/components/SettingToggleRow';
 import { WheelPicker } from '@/components/WheelPicker';
-import { spacing } from '@/constants/spacing';
+import { radius, spacing } from '@/constants/spacing';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useFastingStore } from '@/stores/useFastingStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { type ThemeMode, useSettingsStore } from '@/stores/useSettingsStore';
 import { useTodoStore } from '@/stores/useTodoStore';
 import { useUserStore } from '@/stores/useUserStore';
+import { formatMetric } from '@/utils/formatMetric';
 
-const HEIGHT_VALUES = Array.from({ length: 101 }, (_, i) => i + 120);
-const WEIGHT_VALUES = Array.from({ length: 151 }, (_, i) => i + 30);
 const AGE_VALUES = Array.from({ length: 83 }, (_, i) => i + 10);
 
 type PickerType = 'height' | 'weight' | 'targetWeight' | 'age' | null;
 
-const THEME_OPTIONS: { mode: ThemeMode; label: string }[] = [
-  { mode: 'system', label: '시스템' },
-  { mode: 'light', label: '라이트' },
-  { mode: 'dark', label: '다크' },
+const THEME_OPTIONS: { mode: ThemeMode; label: string; icon: 'Monitor' | 'Sun' | 'Moon' }[] = [
+  { mode: 'system', label: '시스템', icon: 'Monitor' },
+  { mode: 'light', label: '라이트', icon: 'Sun' },
+  { mode: 'dark', label: '다크', icon: 'Moon' },
 ];
 
-function SettingRow({
-  label,
-  value,
-  onPress,
-  danger,
-}: {
-  label: string;
-  value?: string;
-  onPress?: () => void;
-  danger?: boolean;
-}) {
-  const c = useThemeColors();
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: spacing.card,
-        paddingVertical: spacing.item,
-        opacity: pressed && onPress ? 0.7 : 1,
-      })}
-    >
-      <AppText variant="body" tone={danger ? 'tertiary' : 'primary'} style={danger ? { color: c.danger } : {}}>
-        {label}
-      </AppText>
-      {value !== undefined && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <AppText variant="body" tone="tertiary">
-            {value}
-          </AppText>
-          {onPress && <AppIcon name="ChevronRight" size={16} color={c.inkTertiary} />}
-        </View>
-      )}
-    </Pressable>
-  );
-}
-
-function ToggleRow({
-  label,
-  description,
-  value,
-  onToggle,
-}: {
-  label: string;
-  description?: string;
-  value: boolean;
-  onToggle: () => void;
-}) {
-  const c = useThemeColors();
-
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: spacing.card,
-        paddingVertical: 12,
-      }}
-    >
-      <View style={{ flex: 1, paddingRight: 12 }}>
-        <AppText variant="body">{label}</AppText>
-        {description && (
-          <AppText variant="caption" tone="tertiary" style={{ marginTop: 2 }}>
-            {description}
-          </AppText>
-        )}
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        trackColor={{ false: c.surfaceMuted, true: c.ink }}
-        thumbColor={c.surface}
-      />
-    </View>
-  );
-}
+const METRIC_LIMITS = {
+  height: { min: 120, max: 220, defaultValue: 170, unit: 'cm', title: '키 선택' },
+  weight: { min: 30, max: 180, defaultValue: 70, unit: 'kg', title: '체중 선택' },
+  targetWeight: { min: 30, max: 180, defaultValue: 65, unit: 'kg', title: '목표 체중 선택' },
+} as const;
 
 export default function SettingsScreen() {
   const c = useThemeColors();
@@ -125,28 +55,42 @@ export default function SettingsScreen() {
   } = useSettingsStore();
   const [pickerType, setPickerType] = useState<PickerType>(null);
 
-  function getPickerProps() {
+  const isProfileIncomplete =
+    profile.heightCm == null || profile.weightKg == null || profile.ageYears == null || profile.isMale == null;
+
+  function getDecimalPickerProps() {
     switch (pickerType) {
       case 'height':
-        return { values: HEIGHT_VALUES, selected: profile.heightCm ?? 170, unit: 'cm', title: '키 선택' };
+        return { ...METRIC_LIMITS.height, selected: profile.heightCm ?? METRIC_LIMITS.height.defaultValue };
       case 'weight':
-        return { values: WEIGHT_VALUES, selected: profile.weightKg ?? 70, unit: 'kg', title: '체중 선택' };
+        return { ...METRIC_LIMITS.weight, selected: profile.weightKg ?? METRIC_LIMITS.weight.defaultValue };
       case 'targetWeight':
-        return { values: WEIGHT_VALUES, selected: profile.targetWeightKg ?? 65, unit: 'kg', title: '목표 체중 선택' };
-      case 'age':
-        return { values: AGE_VALUES, selected: profile.ageYears ?? 30, unit: '세', title: '나이 선택' };
+        return {
+          ...METRIC_LIMITS.targetWeight,
+          selected: profile.targetWeightKg ?? METRIC_LIMITS.targetWeight.defaultValue,
+        };
       default:
-        return { values: HEIGHT_VALUES, selected: 170, unit: '', title: '' };
+        return { ...METRIC_LIMITS.height, selected: METRIC_LIMITS.height.defaultValue };
     }
   }
 
-  function handlePickerConfirm(value: number) {
+  function handleDecimalConfirm(value: number) {
     switch (pickerType) {
-      case 'height': setHeight(value); break;
-      case 'weight': setWeight(value); break;
-      case 'targetWeight': setTargetWeight(value); break;
-      case 'age': setAge(value); break;
+      case 'height':
+        setHeight(value);
+        break;
+      case 'weight':
+        setWeight(value);
+        break;
+      case 'targetWeight':
+        setTargetWeight(value);
+        break;
     }
+    setPickerType(null);
+  }
+
+  function handleAgeConfirm(value: number) {
+    setAge(value);
     setPickerType(null);
   }
 
@@ -186,7 +130,10 @@ export default function SettingsScreen() {
     );
   }
 
-  const { values, selected, unit, title } = getPickerProps();
+  const decimalPicker = getDecimalPickerProps();
+  const isAgePicker = pickerType === 'age';
+  const isDecimalPicker =
+    pickerType === 'height' || pickerType === 'weight' || pickerType === 'targetWeight';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
@@ -195,159 +142,169 @@ export default function SettingsScreen() {
           flexDirection: 'row',
           alignItems: 'center',
           paddingHorizontal: spacing.screen,
-          paddingVertical: 14,
+          paddingVertical: spacing.item,
           gap: 12,
         }}
       >
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <AppIcon name="X" size={20} />
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="닫기"
+        >
+          <AppIcon name="X" size={20} color={c.ink} />
         </Pressable>
-        <AppText variant="title">설정</AppText>
+        <AppText variant="title" style={{ flex: 1 }}>
+          설정
+        </AppText>
       </View>
 
       <Divider />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <SectionHeader title="신체 정보" variant="caption" />
-        <SettingGroup>
-          <SettingRow
-            label="키"
-            value={profile.heightCm ? `${profile.heightCm} cm` : '미설정'}
-            onPress={() => setPickerType('height')}
-          />
-          <Divider />
-          <SettingRow
-            label="체중"
-            value={profile.weightKg ? `${profile.weightKg} kg` : '미설정'}
-            onPress={() => setPickerType('weight')}
-          />
-          <Divider />
-          <SettingRow
-            label="목표 체중"
-            value={profile.targetWeightKg ? `${profile.targetWeightKg} kg` : '미설정'}
-            onPress={() => setPickerType('targetWeight')}
-          />
-          <Divider />
-          <SettingRow
-            label="나이"
-            value={profile.ageYears ? `${profile.ageYears}세` : '미설정'}
-            onPress={() => setPickerType('age')}
-          />
-          <Divider />
-          <Pressable
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingHorizontal: spacing.card,
-              paddingVertical: spacing.item,
-            }}
-          >
-            <AppText variant="body">성별</AppText>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
-              {([{ label: '남성', value: true }, { label: '여성', value: false }] as const).map(({ label, value }) => (
-                <Pressable
-                  key={label}
-                  onPress={() => setIsMale(profile.isMale === value ? null : value)}
-                  style={({ pressed }) => ({
-                    paddingHorizontal: 14,
-                    paddingVertical: 6,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor: profile.isMale === value ? c.ink : c.border,
-                    backgroundColor: profile.isMale === value ? c.surfaceSubtle : 'transparent',
-                    opacity: pressed ? 0.85 : 1,
-                  })}
-                >
-                  <AppText
-                    variant="caption"
-                    tone={profile.isMale === value ? 'primary' : 'tertiary'}
-                    style={profile.isMale === value ? { fontWeight: '700' } : {}}
-                  >
-                    {label}
-                  </AppText>
-                </Pressable>
-              ))}
-            </View>
-          </Pressable>
-        </SettingGroup>
-
-        <SectionHeader title="화면" variant="caption" />
-        <SettingGroup>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: spacing.sm,
+          paddingBottom: spacing.section * 2,
+          backgroundColor: c.surfaceSubtle,
+        }}
+      >
+        {isProfileIncomplete && (
           <View
             style={{
+              marginHorizontal: spacing.screen,
+              marginBottom: spacing.card,
               flexDirection: 'row',
-              gap: spacing.sm,
-              paddingHorizontal: spacing.card,
-              paddingVertical: 12,
+              alignItems: 'flex-start',
+              gap: 10,
+              backgroundColor: c.surfaceSubtle,
+              borderRadius: radius.lg,
+              borderWidth: 1,
+              borderColor: c.border,
+              borderLeftWidth: 3,
+              borderLeftColor: c.inkTertiary,
+              paddingHorizontal: spacing.item,
+              paddingVertical: spacing.card,
             }}
           >
-            {THEME_OPTIONS.map((opt) => (
-              <Pressable
-                key={opt.mode}
-                onPress={() => setThemeMode(opt.mode)}
-                style={({ pressed }) => ({
-                  flex: 1,
-                  paddingVertical: 10,
-                  borderRadius: 10,
-                  borderWidth: 1,
-                  borderColor: themeMode === opt.mode ? c.ink : c.border,
-                  backgroundColor: themeMode === opt.mode ? c.surfaceSubtle : 'transparent',
-                  alignItems: 'center',
-                  opacity: pressed ? 0.85 : 1,
-                })}
-              >
-                <AppText
-                  variant="caption"
-                  tone={themeMode === opt.mode ? 'primary' : 'tertiary'}
-                  style={themeMode === opt.mode ? { fontWeight: '700' } : {}}
-                >
-                  {opt.label}
-                </AppText>
-              </Pressable>
-            ))}
+            <AppIcon name="UserCircle" size={18} color={c.inkTertiary} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <AppText variant="caption" tone="secondary" style={{ fontWeight: '600' }}>
+                프로필을 완성해 주세요
+              </AppText>
+              <AppText variant="caption" tone="tertiary" style={{ lineHeight: 17 }}>
+                키·체중·나이·성별을 입력하면 단식 칼로리 계산이 가능해요.
+              </AppText>
+            </View>
           </View>
-        </SettingGroup>
+        )}
 
-        <SectionHeader title="알림" variant="caption" />
-        <SettingGroup>
-          <ToggleRow
+        <SettingSection title="신체 정보" spacingTop={isProfileIncomplete ? spacing.sm : spacing.card}>
+          <SettingRow
+            label="키"
+            value={formatMetric(profile.heightCm, 'cm')}
+            unset={profile.heightCm == null}
+            onPress={() => setPickerType('height')}
+          />
+          <SettingInsetDivider />
+          <SettingRow
+            label="체중"
+            value={formatMetric(profile.weightKg, 'kg')}
+            unset={profile.weightKg == null}
+            onPress={() => setPickerType('weight')}
+          />
+          <SettingInsetDivider />
+          <SettingRow
+            label="목표 체중"
+            value={formatMetric(profile.targetWeightKg, 'kg')}
+            unset={profile.targetWeightKg == null}
+            onPress={() => setPickerType('targetWeight')}
+          />
+          <SettingInsetDivider />
+          <SettingRow
+            label="나이"
+            value={profile.ageYears != null ? `${profile.ageYears}세` : '미설정'}
+            unset={profile.ageYears == null}
+            onPress={() => setPickerType('age')}
+          />
+          <SettingChoiceRow
+            label="성별"
+            allowDeselect
+            value={profile.isMale}
+            onChange={setIsMale}
+            options={[
+              { label: '남성', value: true },
+              { label: '여성', value: false },
+            ]}
+          />
+        </SettingSection>
+
+        <SettingSection title="테마">
+          <SettingButtonGroup
+            value={themeMode}
+            onChange={(mode) => {
+              if (mode) setThemeMode(mode);
+            }}
+            options={THEME_OPTIONS.map((opt) => ({
+              value: opt.mode,
+              label: opt.label,
+              icon: opt.icon,
+            }))}
+          />
+        </SettingSection>
+
+        <SettingSection title="알림">
+          <SettingToggleRow
             label="단식 알림바"
             description="단식 중 알림 바에 진행 상황을 표시해요"
             value={foregroundServiceEnabled}
-            onToggle={toggleForegroundService}
+            onToggle={(enabled) => {
+              if (enabled !== foregroundServiceEnabled) toggleForegroundService();
+            }}
           />
-          <Divider />
-          <ToggleRow
+          <SettingInsetDivider />
+          <SettingToggleRow
             label="루틴 리마인더"
             description="루틴에 설정된 시간에 알림을 보내드려요"
             value={routineNotificationsEnabled}
-            onToggle={() => setRoutineNotifications(!routineNotificationsEnabled)}
+            onToggle={setRoutineNotifications}
           />
-          <Divider />
-          <ToggleRow
+          <SettingInsetDivider />
+          <SettingToggleRow
             label="할일 마감 알림"
             description="마감일 당일 오전 9시에 알려드려요"
             value={todoNotificationsEnabled}
-            onToggle={() => setTodoNotifications(!todoNotificationsEnabled)}
+            onToggle={setTodoNotifications}
           />
-        </SettingGroup>
+        </SettingSection>
 
-        <SectionHeader title="데이터" variant="caption" />
-        <SettingGroup>
-          <SettingRow label="전체 데이터 초기화" onPress={handleDataReset} danger />
-        </SettingGroup>
-
-        <View style={{ height: 40 }} />
+        <SettingSection
+          title="데이터"
+          bare
+          footer="단식·루틴·할 일 기록과 프로필, 앱 설정이 모두 삭제됩니다."
+        >
+          <SettingDestructiveRow label="전체 데이터 초기화" onPress={handleDataReset} />
+        </SettingSection>
       </ScrollView>
 
+      <DecimalWheelPicker
+        visible={isDecimalPicker}
+        min={decimalPicker.min}
+        max={decimalPicker.max}
+        selectedValue={decimalPicker.selected}
+        unit={decimalPicker.unit}
+        title={decimalPicker.title}
+        onConfirm={handleDecimalConfirm}
+        onClose={() => setPickerType(null)}
+      />
+
       <WheelPicker
-        visible={pickerType !== null}
-        title={title}
-        values={values}
-        selectedValue={selected}
-        unit={unit}
-        onConfirm={handlePickerConfirm}
+        visible={isAgePicker}
+        title="나이 선택"
+        values={AGE_VALUES}
+        selectedValue={profile.ageYears ?? 30}
+        unit="세"
+        onConfirm={handleAgeConfirm}
         onClose={() => setPickerType(null)}
       />
     </SafeAreaView>
