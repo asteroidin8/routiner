@@ -300,13 +300,16 @@ export default function StatsScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={{ padding: 20, gap: 24 }}
+        contentContainerStyle={[
+          { padding: 20, gap: 24 },
+          isDataEmpty && { flexGrow: 1 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <AppText variant="title">{L.title}</AppText>
 
         {isDataEmpty ? (
-          <View style={{ alignItems: 'center', gap: 8, paddingVertical: 16 }}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8 }}>
             <EmptyIllustration variant="stats" size={48} />
             <AppText variant="body" tone="tertiary" style={{ textAlign: 'center', lineHeight: 22 }}>
               {L.emptyBodyLine1}
