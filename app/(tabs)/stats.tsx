@@ -305,137 +305,136 @@ export default function StatsScreen() {
       >
         <AppText variant="title">{L.title}</AppText>
 
-        {isDataEmpty && (
-          <View style={{ alignItems: 'center', gap: 12, paddingVertical: 24 }}>
-            <EmptyIllustration variant="stats" />
+        {isDataEmpty ? (
+          <View style={{ alignItems: 'center', gap: 8, paddingVertical: 16 }}>
+            <EmptyIllustration variant="stats" size={48} />
             <AppText variant="body" tone="tertiary" style={{ textAlign: 'center', lineHeight: 22 }}>
               {L.emptyBodyLine1}
               {'\n'}
               {L.emptyBodyLine2}
             </AppText>
-            <AppText variant="caption" tone="disabled" style={{ textAlign: 'center' }}>
-              {L.emptyCaption}
-            </AppText>
           </View>
-        )}
-
-        <View style={{ gap: 12 }}>
-          <SectionHeader title={L.sectionFasting} />
-          {!hydrated ? (
-            <StatsSummarySkeleton />
-          ) : (
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <SummaryCard label={L.totalRecords} value={`${records.length}${L.timesUnit}`} />
-              <SummaryCard label={L.completed} value={`${completedFasts}${L.timesUnit}`} />
-              <SummaryCard label={L.avgDuration} value={formatMinutes(avgFastMinutes)} />
+        ) : (
+          <>
+            <View style={{ gap: 12 }}>
+              <SectionHeader title={L.sectionFasting} />
+              {!hydrated ? (
+                <StatsSummarySkeleton />
+              ) : (
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <SummaryCard label={L.totalRecords} value={`${records.length}${L.timesUnit}`} />
+                  <SummaryCard label={L.completed} value={`${completedFasts}${L.timesUnit}`} />
+                  <SummaryCard label={L.avgDuration} value={formatMinutes(avgFastMinutes)} />
+                </View>
+              )}
             </View>
-          )}
-        </View>
 
-        {hydrated && hasChartData && (
-          <View style={{ gap: 8 }}>
-            <AppText variant="caption" tone="tertiary">
-              {L.chartTitle}
-            </AppText>
-            <BarChart data={last7Days} width={SCREEN_WIDTH - 40} height={130} unit="h" />
-          </View>
-        )}
-
-        <View style={{ gap: 12 }}>
-          <SectionHeader title={L.sectionRoutine} />
-          {!hydrated ? (
-            <StatsSummarySkeleton />
-          ) : (
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <SummaryCard label={L.totalRoutines} value={`${routines.length}${L.countUnit}`} />
-              <SummaryCard label={L.todayRoutines} value={`${todayRoutines.length}${L.countUnit}`} />
-              <SummaryCard
-                label={L.maxStreak}
-                value={maxStreak > 0 ? `${maxStreak}${L.dayUnit}` : '-'}
-              />
-            </View>
-          )}
-        </View>
-
-        <View style={{ gap: 12 }}>
-          <SectionHeader title={L.sectionTodo} />
-          {!hydrated ? (
-            <StatsSummarySkeleton />
-          ) : (
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <SummaryCard label={L.completionRate} value={`${completionRate}%`} />
-              <SummaryCard
-                label={L.importantTodos}
-                value={totalHighPriority > 0 ? `${completedHighPriority}/${totalHighPriority}` : '-'}
-              />
-            </View>
-          )}
-        </View>
-
-        <Divider />
-
-        <View style={{ gap: 12 }}>
-          <View
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}
-          >
-            <Pressable onPress={prevMonth} hitSlop={8} style={{ padding: 4 }}>
-              <AppIcon name="ChevronLeft" size={18} color={c.inkSecondary} />
-            </Pressable>
-            <AppText variant="body" style={{ fontWeight: '700', minWidth: 90, textAlign: 'center' }}>
-              {viewYear}
-              {L.yearSuffix} {viewMonth + 1}
-              {L.monthSuffix}
-            </AppText>
-            <Pressable
-              onPress={nextMonth}
-              hitSlop={8}
-              style={{ padding: 4, opacity: isCurrentMonth ? 0.3 : 1 }}
-              disabled={isCurrentMonth}
-            >
-              <AppIcon name="ChevronRight" size={18} color={c.inkSecondary} />
-            </Pressable>
-            {!isCurrentMonth && (
-              <Pressable
-                onPress={goToday}
-                style={{
-                  paddingHorizontal: 10,
-                  paddingVertical: 4,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: c.border,
-                }}
-              >
+            {hydrated && hasChartData && (
+              <View style={{ gap: 8 }}>
                 <AppText variant="caption" tone="tertiary">
-                  {L.today}
+                  {L.chartTitle}
                 </AppText>
-              </Pressable>
+                <BarChart data={last7Days} width={SCREEN_WIDTH - 40} height={130} unit="h" />
+              </View>
             )}
-          </View>
 
-          <MonthGrid
-            year={viewYear}
-            month={viewMonth}
-            summaries={summaries}
-            onSelect={setSelected}
-            getRoutineCompletedCount={(date) => {
-              const dayOfWeek = new Date(`${date}T00:00:00`).getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
-              const dayRoutines = routines.filter((r) => r.repeatDays.includes(dayOfWeek));
-              if (dayRoutines.length === 0) return 0;
-              const completedIds = new Set(getCompletedIds(date));
-              return dayRoutines.filter((r) => completedIds.has(r.id)).length;
-            }}
-            getRoutineTotalCount={(date) => {
-              const dayOfWeek = new Date(`${date}T00:00:00`).getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
-              return routines.filter((r) => r.repeatDays.includes(dayOfWeek)).length;
-            }}
-          />
+            <View style={{ gap: 12 }}>
+              <SectionHeader title={L.sectionRoutine} />
+              {!hydrated ? (
+                <StatsSummarySkeleton />
+              ) : (
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <SummaryCard label={L.totalRoutines} value={`${routines.length}${L.countUnit}`} />
+                  <SummaryCard label={L.todayRoutines} value={`${todayRoutines.length}${L.countUnit}`} />
+                  <SummaryCard
+                    label={L.maxStreak}
+                    value={maxStreak > 0 ? `${maxStreak}${L.dayUnit}` : '-'}
+                  />
+                </View>
+              )}
+            </View>
 
-          {records.length === 0 && !isDataEmpty && (
-            <AppText variant="caption" tone="disabled" style={{ textAlign: 'center' }}>
-              {L.noFastingThisMonth}
-            </AppText>
-          )}
-        </View>
+            <View style={{ gap: 12 }}>
+              <SectionHeader title={L.sectionTodo} />
+              {!hydrated ? (
+                <StatsSummarySkeleton />
+              ) : (
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <SummaryCard label={L.completionRate} value={`${completionRate}%`} />
+                  <SummaryCard
+                    label={L.importantTodos}
+                    value={totalHighPriority > 0 ? `${completedHighPriority}/${totalHighPriority}` : '-'}
+                  />
+                </View>
+              )}
+            </View>
+
+            <Divider />
+
+            <View style={{ gap: 12 }}>
+              <View
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}
+              >
+                <Pressable onPress={prevMonth} hitSlop={8} style={{ padding: 4 }}>
+                  <AppIcon name="ChevronLeft" size={18} color={c.inkSecondary} />
+                </Pressable>
+                <AppText variant="body" style={{ fontWeight: '700', minWidth: 90, textAlign: 'center' }}>
+                  {viewYear}
+                  {L.yearSuffix} {viewMonth + 1}
+                  {L.monthSuffix}
+                </AppText>
+                <Pressable
+                  onPress={nextMonth}
+                  hitSlop={8}
+                  style={{ padding: 4, opacity: isCurrentMonth ? 0.3 : 1 }}
+                  disabled={isCurrentMonth}
+                >
+                  <AppIcon name="ChevronRight" size={18} color={c.inkSecondary} />
+                </Pressable>
+                {!isCurrentMonth && (
+                  <Pressable
+                    onPress={goToday}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: c.border,
+                    }}
+                  >
+                    <AppText variant="caption" tone="tertiary">
+                      {L.today}
+                    </AppText>
+                  </Pressable>
+                )}
+              </View>
+
+              <MonthGrid
+                year={viewYear}
+                month={viewMonth}
+                summaries={summaries}
+                onSelect={setSelected}
+                getRoutineCompletedCount={(date) => {
+                  const dayOfWeek = new Date(`${date}T00:00:00`).getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
+                  const dayRoutines = routines.filter((r) => r.repeatDays.includes(dayOfWeek));
+                  if (dayRoutines.length === 0) return 0;
+                  const completedIds = new Set(getCompletedIds(date));
+                  return dayRoutines.filter((r) => completedIds.has(r.id)).length;
+                }}
+                getRoutineTotalCount={(date) => {
+                  const dayOfWeek = new Date(`${date}T00:00:00`).getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
+                  return routines.filter((r) => r.repeatDays.includes(dayOfWeek)).length;
+                }}
+              />
+
+              {records.length === 0 && (
+                <AppText variant="caption" tone="disabled" style={{ textAlign: 'center' }}>
+                  {L.noFastingThisMonth}
+                </AppText>
+              )}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       {selected && (
