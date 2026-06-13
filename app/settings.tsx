@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 
@@ -28,6 +28,7 @@ import { type ThemeMode, useSettingsStore } from '@/stores/useSettingsStore';
 import { useTodoStore } from '@/stores/useTodoStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { formatMetric } from '@/utils/formatMetric';
+import { requestNotificationPermission } from '@/utils/notificationPermission';
 import { isProfileIncomplete } from '@/utils/profile';
 import { cancelNotificationsByPrefix, NOTIFICATION_ID } from '@/utils/notifications';
 
@@ -139,6 +140,7 @@ export default function SettingsScreen() {
               themeMode: 'system',
               routineNotificationsEnabled: false,
               todoNotificationsEnabled: false,
+              onboardingCompleted: false,
               seenHints: {},
             });
           },
@@ -151,6 +153,21 @@ export default function SettingsScreen() {
   const isAgePicker = pickerType === 'age';
   const isDecimalPicker =
     pickerType === 'height' || pickerType === 'weight' || pickerType === 'targetWeight';
+
+  async function handleRoutineNotifications(enabled: boolean) {
+    if (enabled && !(await requestNotificationPermission())) return;
+    setRoutineNotifications(enabled);
+  }
+
+  async function handleTodoNotifications(enabled: boolean) {
+    if (enabled && !(await requestNotificationPermission())) return;
+    setTodoNotifications(enabled);
+  }
+
+  async function handleForegroundServiceToggle() {
+    if (!foregroundServiceEnabled && !(await requestNotificationPermission())) return;
+    toggleForegroundService();
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
@@ -250,21 +267,21 @@ export default function SettingsScreen() {
             label="단식 알림바"
             description="단식 중 알림 바에 진행 상황을 표시해요"
             value={foregroundServiceEnabled}
-            onToggle={(enabled) => {
-              if (enabled !== foregroundServiceEnabled) toggleForegroundService();
+            onToggle={() => {
+              handleForegroundServiceToggle();
             }}
           />
           <SettingToggleRow
             label="루틴 리마인더"
             description="루틴에 설정된 시간에 알림을 보내드려요"
             value={routineNotificationsEnabled}
-            onToggle={setRoutineNotifications}
+            onToggle={handleRoutineNotifications}
           />
           <SettingToggleRow
             label="할일 마감 알림"
             description="마감일 당일 오전 9시에 알려드려요"
             value={todoNotificationsEnabled}
-            onToggle={setTodoNotifications}
+            onToggle={handleTodoNotifications}
           />
         </SettingSection>
 
@@ -277,6 +294,12 @@ export default function SettingsScreen() {
 
         <SettingSection title="앱 정보">
           <SettingRow label="개인정보처리방침" onPress={() => router.push('/privacy')} />
+          <SettingRow
+            label="문의하기"
+            onPress={() =>
+              Linking.openURL('mailto:asteroidin8@gmail.com?subject=Routiner%20문의')
+            }
+          />
           <SettingRow
             label="버전"
             value={Constants.expoConfig?.version ?? '1.0.0'}
