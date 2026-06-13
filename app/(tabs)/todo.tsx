@@ -1,15 +1,14 @@
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedListItem } from '@/components/AnimatedListItem';
-import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { Coachmark } from '@/components/Coachmark';
 import { Divider } from '@/components/Divider';
-import { DragItemWrapper } from '@/components/DragItemWrapper';
 import { EmptyIllustration } from '@/components/EmptyIllustration';
+import { FloatingAddButton } from '@/components/FloatingAddButton';
 import { SwipeActions } from '@/components/SwipeActions';
 import { TodoEditModal } from '@/components/TodoEditModal';
 import { TodoItem } from '@/components/TodoItem';
@@ -18,6 +17,7 @@ import { UndoSnackbar } from '@/components/UndoSnackbar';
 import { useTabScrollToTop } from '@/contexts/TabNavigationContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { getPriorityColor } from '@/utils/dateFormat';
+import { runAfterDragAnimation } from '@/utils/deferredReorder';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { type Todo, type TodoPriority, useTodoStore } from '@/stores/useTodoStore';
 
@@ -121,31 +121,28 @@ export default function TodoScreen() {
   }
 
   function renderDraggableItem(priority: TodoPriority) {
-    return function ({ item, drag, isActive, getIndex }: RenderItemParams<Todo>) {
-      const idx = getIndex?.() ?? 0;
+    return function ({ item, drag }: RenderItemParams<Todo>) {
       return (
-        <AnimatedListItem itemKey={item.id} index={idx} animateLayout={false}>
-          <DragItemWrapper isActive={isActive}>
-            <SwipeActions
-              onDelete={() => {
-                setUndoTarget(item);
-                removeTodo(item.id);
-              }}
-              onComplete={() => completeTodo(item.id)}
-            >
-              <View>
-                <TodoItem
-                  todo={item}
-                  onToggle={() => completeTodo(item.id)}
-                  onLongPress={drag}
-                  onPress={() => setEditTarget(item)}
-                  onToggleHomePin={() => toggleTodoHomePin(item.id)}
-                />
-                <Divider />
-              </View>
-            </SwipeActions>
-          </DragItemWrapper>
-        </AnimatedListItem>
+        <ScaleDecorator activeScale={1.02}>
+          <SwipeActions
+            onDelete={() => {
+              setUndoTarget(item);
+              removeTodo(item.id);
+            }}
+            onComplete={() => completeTodo(item.id)}
+          >
+            <View>
+              <TodoItem
+                todo={item}
+                onToggle={() => completeTodo(item.id)}
+                onLongPress={drag}
+                onPress={() => setEditTarget(item)}
+                onToggleHomePin={() => toggleTodoHomePin(item.id)}
+              />
+              <Divider />
+            </View>
+          </SwipeActions>
+        </ScaleDecorator>
       );
     };
   }
@@ -178,6 +175,7 @@ export default function TodoScreen() {
   );
 
   if (filter === 'completed') {
+    const showFab = completedTodos.length > 0;
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
         <Header
@@ -185,12 +183,11 @@ export default function TodoScreen() {
           setFilter={setFilter}
           activeTodos={activeTodos}
           completedTodos={completedTodos}
-          onAdd={() => setAddModalVisible(true)}
         />
         {completedTodos.length === 0 ? (
           <EmptyState message="아직 완료한 일이 없어요" variant="todo" />
         ) : (
-          <ScrollView contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
             {completedTodos.map((todo, i) => (
               <AnimatedListItem key={todo.id} itemKey={todo.id} index={i}>
                 <SwipeActions
@@ -214,6 +211,12 @@ export default function TodoScreen() {
             ))}
           </ScrollView>
         )}
+        {showFab && (
+          <FloatingAddButton
+            onPress={() => setAddModalVisible(true)}
+            accessibilityLabel="할일 추가"
+          />
+        )}
         {modals}
       </SafeAreaView>
     );
@@ -228,7 +231,6 @@ export default function TodoScreen() {
         setFilter={setFilter}
         activeTodos={activeTodos}
         completedTodos={completedTodos}
-        onAdd={() => setAddModalVisible(true)}
       />
 
       {!hasTodos ? (
@@ -242,7 +244,7 @@ export default function TodoScreen() {
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 32 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
         >
           {PRIORITY_SECTIONS.map(({ key, label }) => {
             const items = activeTodos
@@ -256,7 +258,9 @@ export default function TodoScreen() {
                   <DraggableFlatList
                     data={items}
                     keyExtractor={(item) => item.id}
-                    onDragEnd={({ data }) => reorderTodos(key, data)}
+                    onDragEnd={({ data }) =>
+                      runAfterDragAnimation(() => reorderTodos(key, data))
+                    }
                     renderItem={renderDraggableItem(key)}
                     scrollEnabled={false}
                     activationDistance={4}
@@ -266,6 +270,13 @@ export default function TodoScreen() {
             );
           })}
         </ScrollView>
+      )}
+
+      {hasTodos && (
+        <FloatingAddButton
+          onPress={() => setAddModalVisible(true)}
+          accessibilityLabel="할일 추가"
+        />
       )}
 
       {modals}
@@ -278,13 +289,11 @@ function Header({
   setFilter,
   activeTodos,
   completedTodos,
-  onAdd,
 }: {
   filter: TabFilter;
   setFilter: (f: TabFilter) => void;
   activeTodos: Todo[];
   completedTodos: Todo[];
-  onAdd: () => void;
 }) {
   const c = useThemeColors();
   return (
@@ -300,9 +309,6 @@ function Header({
         }}
       >
         <AppText variant="title">할일</AppText>
-        <Pressable onPress={onAdd} hitSlop={12} accessibilityRole="button" accessibilityLabel="할일 추가">
-          <AppIcon name="Plus" size={22} />
-        </Pressable>
       </View>
       <View style={{ flexDirection: 'row', paddingHorizontal: 20, gap: 16, marginBottom: 4 }}>
         {(['active', 'completed'] as TabFilter[]).map((tab) => {
