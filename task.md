@@ -37,7 +37,7 @@ P3 [~] a11y (1-7) · Sentry DSN (1-5)
 | # | 작업 | 상태 |
 |---|------|------|
 | 1-4 | zndi UI·카피 | [x] |
-| 1-5 | Sentry DSN | [~] 코드·`docs/sentry-setup.md` · Dashboard DSN [ ] |
+| 1-5 | Sentry DSN | [x] 로컬 `.env` · EAS env [ ] |
 | 1-6 | CI lint | [x] |
 | 1-7 | a11y | [~] 홈·섹션 헤더 보강 (#98) · 탭·모달 추가 [ ] |
 | 1-8 | Settings UI | [x] |
@@ -58,7 +58,7 @@ P3 [~] a11y (1-7) · Sentry DSN (1-5)
 |------|------|
 | Supabase Dashboard SQL·Redirect `zndi://` | 사용자 확인 |
 | Google Cloud 패키지 `com.asteroidin8.zndi` | 사용자 확인 |
-| Sentry `EXPO_PUBLIC_SENTRY_DSN` | `.env` 설정 필요 |
+| Sentry `EXPO_PUBLIC_SENTRY_DSN` | 로컬 `.env` [x] · EAS [ ] |
 | eslint warning 7건 | 비차단 |
 
 ---
