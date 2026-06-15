@@ -39,7 +39,6 @@ export default function SettingsNotificationsScreen() {
       <SettingSection title="알림">
         <SettingToggleRow
           label={copy.fastingBar.label}
-          description={copy.fastingBar.description}
           value={foregroundServiceEnabled}
           onToggle={() => {
             handleForegroundServiceToggle();
@@ -47,13 +46,11 @@ export default function SettingsNotificationsScreen() {
         />
         <SettingToggleRow
           label={copy.routine.label}
-          description={copy.routine.description}
           value={routineNotificationsEnabled}
           onToggle={handleRoutineNotifications}
         />
         <SettingToggleRow
           label={copy.todo.label}
-          description={copy.todo.description}
           value={todoNotificationsEnabled}
           onToggle={handleTodoNotifications}
         />

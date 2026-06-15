@@ -48,7 +48,9 @@ UI [x] zndi visual pass (#102–#104)
 |---|------|------|
 | S-1 | neutral border · spacing · neon 제거 | [x] #106 |
 | S-2 | 4섹션 · profile/notifications/theme | [x] #108 |
-| S-3 | 헤더·여백·danger 라벨 | [x] |
+| S-3 | 헤더·여백·danger 라벨 | [x] #109 |
+| S-4 | BaseSettingItem row 통합 | [x] |
+| S-5 | 테마 row 선택 · 신체정보 분리 | [x] |
 
 ---
 
@@ -93,6 +95,7 @@ UI [x] zndi visual pass (#102–#104)
 
 | 일시 | 작업 |
 |------|------|
+| 2026-06-16 | Settings row 통합 · 테마/신체정보 (#110+) |
 | 2026-06-16 | Settings v1 구조 (#106 #108) · design guide |
 | 2026-06-16 | Phase UI visual pass (#102–#104) |
 | 2026-06-16 | sentry-setup 제거 · .env.example 제거 (#100) |

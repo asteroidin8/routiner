@@ -1,13 +1,9 @@
 import type { ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
 
-import { AppIcon } from '../AppIcon';
 import { AppText } from '../AppText';
-import {
-  settingCompactRowStyle,
-  settingRowLabelStyle,
-  settingRowTrailingStyle,
-} from './settingStyles';
+import { BaseSettingItem } from './BaseSettingItem';
+import { settingRowLabelStyle } from './settingStyles';
+import { SettingValueAccessory } from './SettingValueAccessory';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 type Props = {
@@ -31,56 +27,38 @@ export function SettingRow({
 }: Props) {
   const c = useThemeColors();
   const interactive = Boolean(onPress);
-  const rowStyle = settingCompactRowStyle();
 
-  const content = (
-    <>
-      <AppText
-        variant="body"
-        tone={danger ? 'tertiary' : 'primary'}
-        style={[settingRowLabelStyle(), danger ? { color: c.danger } : undefined]}
-        numberOfLines={1}
-      >
-        {label}
-      </AppText>
-      {trailing ?? (
-        (value !== undefined || (interactive && showChevron)) && (
-          <View style={settingRowTrailingStyle()}>
-            {value !== undefined && (
-              <AppText variant="body" tone={unset ? 'tertiary' : 'secondary'} numberOfLines={1}>
-                {value}
-              </AppText>
-            )}
-            {showChevron && interactive && (
-              <View style={{ marginLeft: 0 }}>
-                <AppIcon name="ChevronRight" size={16} color={c.inkTertiary} />
-              </View>
-            )}
-          </View>
-        )
-      )}
-    </>
+  const labelNode = (
+    <AppText
+      variant="body"
+      tone={danger ? 'tertiary' : 'primary'}
+      style={[settingRowLabelStyle(), danger ? { color: c.danger } : undefined]}
+      numberOfLines={1}
+    >
+      {label}
+    </AppText>
   );
 
-  if (!interactive) {
-    return (
-      <View style={rowStyle} accessibilityLabel={label}>
-        {content}
-      </View>
-    );
-  }
+  const trailingNode =
+    trailing !== undefined && trailing !== null
+      ? trailing
+      : value !== undefined || (interactive && showChevron)
+        ? (
+            <SettingValueAccessory
+              value={value}
+              unset={unset}
+              showChevron={interactive && showChevron}
+            />
+          )
+        : null;
 
   return (
-    <Pressable
+    <BaseSettingItem
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityLabel={value ? `${label}, ${value}` : label}
-      style={({ pressed }) => ({
-        ...rowStyle,
-        backgroundColor: pressed ? c.surfaceMuted : 'transparent',
-      })}
     >
-      {content}
-    </Pressable>
+      {labelNode}
+      {trailingNode}
+    </BaseSettingItem>
   );
 }
