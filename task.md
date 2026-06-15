@@ -21,7 +21,7 @@
 P1 [x] privacy · 홈/통계 · 카피
 P2 [x] Settings Card · CI lint
 P3 [~] a11y · Sentry DSN (로컬 [x])
-UI [~] zndi visual pass (아래 Phase UI)
+UI [x] zndi visual pass (#102–#104)
 [⏸] EAS · dev APK · 실기 QA
 ```
 
@@ -33,10 +33,10 @@ UI [~] zndi visual pass (아래 Phase UI)
 
 | # | 작업 | 상태 |
 |---|------|------|
-| UI-1 | `themeEffects.ts` · `surfaceCard` · radius 20 | [ ] |
-| UI-2 | `Card` elevated/glow · Settings 섹션·토글·세gment | [ ] |
-| UI-3 | `CompletionCheckbox` · Routine/Todo · Swipe neon | [ ] |
-| UI-4 | Empty illustration accent | [ ] |
+| UI-1 | `themeEffects.ts` · `surfaceCard` · radius 20 | [x] #102 |
+| UI-2 | `Card` elevated/glow · Settings 섹션·토글·segment | [x] #103 |
+| UI-3 | `CompletionCheckbox` · Routine/Todo · Swipe neon | [x] #104 |
+| UI-4 | Empty illustration accent | [x] #104 |
 
 **제외:** Tailwind/global.css 이중 테마 · SettingCard 신규 · 클라oud sync 토글
 
@@ -83,6 +83,6 @@ UI [~] zndi visual pass (아래 Phase UI)
 
 | 일시 | 작업 |
 |------|------|
-| 2026-06-16 | Phase UI visual pass 시작 |
+| 2026-06-16 | Phase UI visual pass (#102–#104) |
 | 2026-06-16 | sentry-setup 제거 · .env.example 제거 (#100) |
 | 2026-06-16 | a11y (#98) · stats (#97) · TopBar (#96) · 할일 (#95) |
