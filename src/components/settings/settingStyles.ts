@@ -2,12 +2,16 @@ import type { ViewStyle } from 'react-native';
 
 import { spacing } from '@/constants/spacing';
 
-/** SettingsList(Card) 좌우·상하 패딩 — row/block은 이 inset 안에서만 배치 */
-export const SETTING_CARD_PADDING_X = spacing.card;
-export const SETTING_CARD_PADDING_Y = spacing.xs;
+/** 설정 row·divider inset (화면 padding과 동일) */
+export const SETTINGS_INSET = spacing.screen;
 
-/** @deprecated SETTING_CARD_PADDING_X */
-export const SETTING_ROW_INSET = SETTING_CARD_PADDING_X;
+/** @deprecated SETTINGS_INSET */
+export const SETTING_CARD_PADDING_X = SETTINGS_INSET;
+
+/** @deprecated SETTINGS_INSET */
+export const SETTING_ROW_INSET = SETTINGS_INSET;
+
+export const SETTING_CARD_PADDING_Y = spacing.xs;
 
 /** @deprecated SETTING_CARD_PADDING_Y */
 export const SETTING_CARD_INSET_Y = SETTING_CARD_PADDING_Y;
@@ -15,38 +19,42 @@ export const SETTING_CARD_INSET_Y = SETTING_CARD_PADDING_Y;
 /** iOS Settings 기준 row 높이 */
 export const SETTING_ROW_HEIGHT = 56;
 
+/** value ↔ chevron 간격 */
+export const SETTING_VALUE_GAP = spacing.sm;
+
+/** chevron 크기 */
+export const SETTING_CHEVRON_SIZE = 17;
+
 /** 세그먼트·버튼 — row 높이 안에 맞춤 */
 export const SETTING_CONTROL_HEIGHT = spacing.section + spacing.sm;
 
+/** SettingsList(Card) — row가 각자 inset padding */
 export function settingCardStyle(): ViewStyle {
   return {
-    paddingHorizontal: SETTING_CARD_PADDING_X,
     paddingVertical: SETTING_CARD_PADDING_Y,
   };
 }
 
-/** 카드 내부 row 공통 — padding은 카드, 정렬은 row */
+/** @deprecated BaseSettingItem 사용 */
 export function settingRowBaseStyle(): ViewStyle {
   return {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: SETTING_ROW_HEIGHT,
+    paddingHorizontal: SETTINGS_INSET,
     width: '100%',
   };
 }
 
-/** navigation·choice·destructive 등 1줄 row */
+/** @deprecated BaseSettingItem 사용 */
 export function settingCompactRowStyle(): ViewStyle {
   return settingRowBaseStyle();
 }
 
-/** 알림 등 제목+설명 row */
+/** @deprecated BaseSettingItem 사용 */
 export function settingRowStyle(): ViewStyle {
-  return {
-    ...settingRowBaseStyle(),
-    paddingVertical: spacing.sm,
-  };
+  return settingRowBaseStyle();
 }
 
 /** row 왼쪽 label */
@@ -58,22 +66,35 @@ export function settingRowLabelStyle(): ViewStyle {
   };
 }
 
-/** row 오른쪽 — value·chevron·segment 버튼 그룹 */
-export function settingRowTrailingStyle(): ViewStyle {
+/** value + chevron 컨테이너 */
+export function settingValueAccessoryStyle(): ViewStyle {
   return {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
+    gap: SETTING_VALUE_GAP,
     flexShrink: 0,
-    gap: spacing.sm,
   };
 }
 
-/** full-width segment·버튼 row (테마 카드) */
+/** @deprecated settingValueAccessoryStyle */
+export function settingRowTrailingStyle(): ViewStyle {
+  return settingValueAccessoryStyle();
+}
+
+/** @deprecated BaseSettingItem + SettingSegmentTrack */
 export function settingSegmentRowStyle(): ViewStyle {
   return {
     ...settingRowBaseStyle(),
     gap: spacing.sm,
+  };
+}
+
+/** divider inset — row 텍스트 시작점과 일치 */
+export function settingDividerStyle(): ViewStyle {
+  return {
+    height: 1,
+    marginHorizontal: SETTINGS_INSET,
   };
 }
 
@@ -82,6 +103,7 @@ export function settingCardBlockStyle(options?: { centered?: boolean }): ViewSty
   return {
     width: '100%',
     minHeight: SETTING_ROW_HEIGHT,
+    paddingHorizontal: SETTINGS_INSET,
     alignItems: options?.centered ? 'center' : 'stretch',
     justifyContent: 'center',
     gap: spacing.sm,
