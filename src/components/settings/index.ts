@@ -1,4 +1,5 @@
 export { DecimalWheelPicker } from './DecimalWheelPicker';
+export { SettingAccountSection } from './SettingAccountSection';
 export { SettingChoiceRow } from './SettingChoiceRow';
 export { SettingDestructiveRow } from './SettingDestructiveRow';
 export { SettingInsetDivider } from './SettingInsetDivider';

@@ -10,6 +10,7 @@ import { AppText } from '@/components/AppText';
 import { InfoBanner } from '@/components/InfoBanner';
 import {
   DecimalWheelPicker,
+  SettingAccountSection,
   SettingChoiceRow,
   SettingDestructiveRow,
   SettingRow,
@@ -209,6 +210,8 @@ export default function SettingsScreen() {
             description="키·체중·나이·성별을 입력하면 단식 칼로리 계산이 가능해요."
           />
         )}
+
+        <SettingAccountSection />
 
         <SettingSection title="신체 정보">
           <SettingRow
