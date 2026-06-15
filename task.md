@@ -1,7 +1,6 @@
 # 잔디 (zndi) 출시·로드맵
 
-> **브랜드:** zndi (잔디) — `docs/design-system.md` · `docs/home-dashboard.md`  
-> **아키텍처:** 로컬 1차 · Supabase 자동 sync (로그인 시) · Realtime  
+> **브랜드:** `docs/design-system.md` · `docs/copy-guide.md` · `docs/home-dashboard.md`  
 > **최종 갱신:** 2026-06-16
 
 ---
@@ -10,32 +9,27 @@
 
 | 구분 | % | 상태 |
 |------|---|------|
-| v1 로컬 | ~92% | 홈 잔디 UI [x] |
-| Supabase MVP | ~85% | privacy [x] · Dashboard [~] |
-| 출시 통합 | ~82% | EAS [⏸] |
+| v1 로컬 | ~95% | 홈 요약·카피 [x] |
+| Supabase MVP | ~85% | [x] |
+| 출시 통합 | ~83% | EAS [⏸] |
 
 ---
 
-## 우선순위 (재선정)
+## 우선순위
 
 ```
-P1 [x] privacy Supabase 조항 (2-9)
-P1 [x] 홈 Contribution Grid + 대시보드 (1-4)
-P2 [ ] Settings UI 마무리 (1-8) — 섹션 카드 톤 통일
-P2 [ ] CI lint (1-6)
+P1 [x] privacy · 홈/통계 역할 분리 · 카피 가이드
+P2 [x] Settings UI (1-8) — 계정 섹션 Card 톤
+P2 [x] CI lint (1-6) — tsc + expo lint
 P3 [ ] a11y (1-7) · Sentry DSN (1-5)
-[⏸] EAS 빌드 · 실기 QA (Phase 0)
+[⏸] EAS · dev APK (zndi package) · 실기 QA
 ```
 
 ---
 
-## Phase 2 — Supabase MVP
+## Phase 2 — Supabase MVP [x]
 
-| # | 작업 | 상태 |
-|---|------|------|
-| 2-1 ~ 2-8 | Auth·sync·Realtime·가이드 | [x] |
-| 2-9 | 개인정보 Supabase 조항 | [x] |
-| 2-10 | 자동 push | [x] |
+2-1 ~ 2-10 완료 (자동 sync · privacy 조항 포함)
 
 ---
 
@@ -43,23 +37,30 @@ P3 [ ] a11y (1-7) · Sentry DSN (1-5)
 
 | # | 작업 | 상태 |
 |---|------|------|
-| 1-4 | zndi 컬러·잔디 UI | [x] 홈 그리드 · 통계 탭 grid [~] |
-| 1-5 | Sentry DSN | [~] |
-| 1-6 | CI lint | [ ] |
-| 1-7 | a11y | [ ] |
-| 1-8 | Settings UI 안정화 | [~] |
+| 1-4 | zndi UI·카피 | [x] 홈 7칸 · 통계 42일 그리드 |
+| 1-5 | Sentry DSN | [~] 코드만 · Dashboard DSN [ ] |
+| 1-6 | CI lint | [x] `.github/workflows/ci.yml` tsc + lint |
+| 1-7 | a11y | [~] 부분 라벨 |
+| 1-8 | Settings UI | [x] A안 클라oud · Card 톤 통일 |
 
 ---
 
 ## Phase 0 — 출시 게이트 [⏸]
 
-EAS Android (7/1) · iOS credentials · 실기 QA · dev APK 재빌드 (zndi package)
+- EAS Android 할당량 7/1
+- dev APK 재빌드 (`com.asteroidin8.zndi` + 새 아이콘)
+- iOS credentials · 실기 QA
 
 ---
 
-## Phase 3 — v1.1+
+## 누락·수동 확인
 
-Freemium IAP · 루틴 상한 · Realtime 공유(2차) · 위젯
+| 항목 | 상태 |
+|------|------|
+| Supabase Dashboard SQL·Redirect `zndi://` | 사용자 확인 |
+| Google Cloud 패키지 `com.asteroidin8.zndi` | 사용자 확인 |
+| Sentry `EXPO_PUBLIC_SENTRY_DSN` | 미설정 |
+| eslint warning 7건 (unused import·exhaustive-deps) | 비차단 |
 
 ---
 
@@ -67,6 +68,6 @@ Freemium IAP · 루틴 상한 · Realtime 공유(2차) · 위젯
 
 | 일시 | 작업 |
 |------|------|
-| 2026-06-16 | privacy 2-9 · 홈 ContributionGrid · home-dashboard.md |
-| 2026-06-16 | 클라oud 설정 A안 (#90) · zndi rename (#89) |
-| 2026-06-16 | zndi 팔레트 · 자동 sync (#88) |
+| 2026-06-16 | Settings Card · CI lint · 홈/통계 (#95) |
+| 2026-06-16 | 홈 요약 복귀 · 카피 · 통계 잔디 (#94) |
+| 2026-06-16 | zndi 아이콘 (#93) · privacy (#91) · 홈 그리드 (#92) |

@@ -80,7 +80,7 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
             accessibilityLabel="오늘의 루틴 보기"
           >
             <AppText variant="body" style={{ fontWeight: '600' }}>
-              {allRoutinesDone ? '오늘 루틴 완료' : '오늘의 루틴'}
+              {allRoutinesDone ? '오늘 잔디 완료' : '오늘의 루틴'}
             </AppText>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <AppText variant="caption" tone="tertiary">

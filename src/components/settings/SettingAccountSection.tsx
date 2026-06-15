@@ -36,9 +36,9 @@ export function SettingAccountSection() {
   if (loading) {
     return (
       <SettingSection title="계정 · 클라우드">
-        <View style={{ padding: spacing.card, alignItems: 'center' }}>
+        <Card style={{ padding: spacing.card, alignItems: 'center' }}>
           <ActivityIndicator color={c.ink} />
-        </View>
+        </Card>
       </SettingSection>
     );
   }
@@ -122,53 +122,39 @@ export function SettingAccountSection() {
         title="계정 · 클라우드"
         footer="로그인하지 않아도 기기에 저장돼요. 로그인하면 다른 기기와 자동으로 맞춰져요."
       >
-        <Pressable
-          onPress={handleGoogle}
-          disabled={busy}
-          accessibilityRole="button"
-          accessibilityLabel="Google로 로그인"
-          style={{
-            backgroundColor: c.primary,
-            borderRadius: 14,
-            paddingVertical: 14,
-            alignItems: 'center',
-            opacity: busy ? 0.6 : 1,
-          }}
-        >
-          <AppText variant="body" style={{ color: c.onPrimary, fontWeight: '700' }}>
-            Google로 로그인
-          </AppText>
-        </Pressable>
-
-        {!emailMode ? (
-          <Pressable onPress={() => setEmailMode(true)} accessibilityRole="button">
-            <AppText variant="caption" tone="tertiary" style={{ textAlign: 'center', marginTop: spacing.sm }}>
-              이메일로 로그인
+        <Card style={{ gap: spacing.sm, padding: spacing.card }}>
+          <Pressable
+            onPress={handleGoogle}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel="Google로 로그인"
+            style={{
+              backgroundColor: c.primary,
+              borderRadius: 14,
+              paddingVertical: 14,
+              alignItems: 'center',
+              opacity: busy ? 0.6 : 1,
+            }}
+          >
+            <AppText variant="body" style={{ color: c.onPrimary, fontWeight: '700' }}>
+              Google로 로그인
             </AppText>
           </Pressable>
-        ) : (
-          <Card style={{ gap: spacing.sm, padding: spacing.card }}>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="email@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              style={{
-                borderWidth: 1,
-                borderColor: c.border,
-                borderRadius: 10,
-                padding: 12,
-                color: c.ink,
-              }}
-              placeholderTextColor={c.inkTertiary}
-            />
-            {otpSent && (
+
+          {!emailMode ? (
+            <Pressable onPress={() => setEmailMode(true)} accessibilityRole="button">
+              <AppText variant="caption" tone="tertiary" style={{ textAlign: 'center', marginTop: spacing.sm }}>
+                이메일로 로그인
+              </AppText>
+            </Pressable>
+          ) : (
+            <View style={{ gap: spacing.sm }}>
               <TextInput
-                value={otp}
-                onChangeText={setOtp}
-                placeholder="인증 코드 6자리"
-                keyboardType="number-pad"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="email@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
                 style={{
                   borderWidth: 1,
                   borderColor: c.border,
@@ -178,23 +164,39 @@ export function SettingAccountSection() {
                 }}
                 placeholderTextColor={c.inkTertiary}
               />
-            )}
-            <Pressable
-              onPress={otpSent ? handleVerifyOtp : handleSendOtp}
-              disabled={busy}
-              style={{
-                backgroundColor: c.surfaceSubtle,
-                borderRadius: 10,
-                paddingVertical: 12,
-                alignItems: 'center',
-              }}
-            >
-              <AppText variant="body" style={{ fontWeight: '600' }}>
-                {otpSent ? '인증하기' : '인증 코드 받기'}
-              </AppText>
-            </Pressable>
-          </Card>
-        )}
+              {otpSent && (
+                <TextInput
+                  value={otp}
+                  onChangeText={setOtp}
+                  placeholder="인증 코드 6자리"
+                  keyboardType="number-pad"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: c.border,
+                    borderRadius: 10,
+                    padding: 12,
+                    color: c.ink,
+                  }}
+                  placeholderTextColor={c.inkTertiary}
+                />
+              )}
+              <Pressable
+                onPress={otpSent ? handleVerifyOtp : handleSendOtp}
+                disabled={busy}
+                style={{
+                  backgroundColor: c.surfaceMuted,
+                  borderRadius: 10,
+                  paddingVertical: 12,
+                  alignItems: 'center',
+                }}
+              >
+                <AppText variant="body" style={{ fontWeight: '600' }}>
+                  {otpSent ? '인증하기' : '인증 코드 받기'}
+                </AppText>
+              </Pressable>
+            </View>
+          )}
+        </Card>
       </SettingSection>
     );
   }

@@ -3,11 +3,11 @@ import { useRef } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ContributionGrid } from '@/components/ContributionGrid';
+import { DailySummaryRow } from '@/components/DailySummaryRow';
 import { FastingCard } from '@/components/FastingCard';
-import { HomeBentoStats } from '@/components/home/HomeBentoStats';
 import { HomeTodayRoutines } from '@/components/home/HomeTodayRoutines';
 import { HomeTopBar } from '@/components/home/HomeTopBar';
+import { HomeWeeklyGrass } from '@/components/home/HomeWeeklyGrass';
 import { InfoBanner } from '@/components/InfoBanner';
 import { spacing } from '@/constants/spacing';
 import { useTabNavigation, useTabScrollToTop } from '@/contexts/TabNavigationContext';
@@ -30,7 +30,11 @@ export default function HomeScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={{ padding: spacing.screen, gap: spacing.section, paddingBottom: spacing.section * 2 }}
+        contentContainerStyle={{
+          padding: spacing.screen,
+          gap: spacing.section,
+          paddingBottom: spacing.section * 2,
+        }}
         showsVerticalScrollIndicator={false}
       >
         <HomeTopBar />
@@ -44,11 +48,11 @@ export default function HomeScreen() {
           />
         )}
 
-        <ContributionGrid />
+        <DailySummaryRow onRoutinePress={() => navigateTo(1)} onTodoPress={() => navigateTo(3)} />
 
         <HomeTodayRoutines onViewAll={() => navigateTo(1)} />
 
-        <HomeBentoStats />
+        <HomeWeeklyGrass />
 
         <FastingCard onPress={() => navigateTo(0)} />
       </ScrollView>

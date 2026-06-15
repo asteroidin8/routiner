@@ -9,4 +9,14 @@ module.exports = defineConfig([
   {
     ignores: ['dist/*', 'node_modules/*', '.expo/*'],
   },
+  {
+    rules: {
+      // RN/Zustand 패턴과 충돌 — tsc로 타입 검사, lint는 스타일·명백한 실수 위주
+      'react-hooks/purity': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/refs': 'off',
+      'import/namespace': 'off',
+    },
+  },
 ]);

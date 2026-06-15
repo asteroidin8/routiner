@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { BarChart, type BarChartItem } from '@/components/BarChart';
+import { ContributionGrid } from '@/components/ContributionGrid';
+import { StatsBentoStats } from '@/components/stats/StatsBentoStats';
 import { Card } from '@/components/Card';
 import { Divider } from '@/components/Divider';
 import { EmptyIllustration } from '@/components/EmptyIllustration';
@@ -311,6 +313,9 @@ export default function StatsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <AppText variant="title">{L.title}</AppText>
+
+        <ContributionGrid />
+        <StatsBentoStats />
 
         {isDataEmpty ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 8 }}>

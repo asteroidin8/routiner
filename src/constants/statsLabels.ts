@@ -18,7 +18,7 @@ export const STATS_LABELS = {
   totalRoutines: '전체 루틴',
   todayRoutines: '오늘 루틴',
   maxStreak: '연속 달성',
-  completionRate: '완료율',
+  completionRate: '달성률',
   importantTodos: '중요한 일',
   today: '오늘',
   noFastingThisMonth: '단식 기록이 없어요',
