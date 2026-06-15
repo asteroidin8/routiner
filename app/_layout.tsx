@@ -7,6 +7,8 @@ import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AppErrorBoundary } from '@/components/AppErrorBoundary';
+import { CloudSyncBridge } from '@/components/CloudSyncBridge';
+import { AuthProvider } from '@/contexts/AuthProvider';
 import { useFastingNotification } from '@/hooks/useFastingNotification';
 import { useMidnightArchive } from '@/hooks/useMidnightArchive';
 import { useRoutineNotifications } from '@/hooks/useRoutineNotifications';
@@ -50,7 +52,10 @@ export default function RootLayout() {
   return (
     <SafeGestureRoot style={{ flex: 1 }}>
       <AppErrorBoundary>
-        <AppContent />
+        <AuthProvider>
+          <CloudSyncBridge />
+          <AppContent />
+        </AuthProvider>
       </AppErrorBoundary>
     </SafeGestureRoot>
   );
