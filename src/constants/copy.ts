@@ -9,16 +9,11 @@ export const TAB_LABELS = {
 } as const;
 
 export const HOME_COPY = {
-  todaySection: '오늘의 잔디',
   weekSection: '이번 주 잔디',
-  todayEmpty: '오늘 심을 잔디가 없어요',
-  viewAllRoutines: '전체',
 } as const;
 
 export const GRASS_COPY = {
-  myGrass: '나의 잔디',
-  gridEmpty: '아직 잔디가 없어요.\n오늘부터 하나 심어볼까요?',
-  gridHint: '루틴을 추가하면 잔디가 자라요',
+  calendarHint: '완료한 루틴·할일이 많을수록 진해져요',
 } as const;
 
 export const STATS_BENTO = {

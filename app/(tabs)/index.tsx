@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DailySummaryRow } from '@/components/DailySummaryRow';
 import { FastingCard } from '@/components/FastingCard';
-import { HomeTodayRoutines } from '@/components/home/HomeTodayRoutines';
 import { HomeTopBar } from '@/components/home/HomeTopBar';
 import { HomeWeeklyGrass } from '@/components/home/HomeWeeklyGrass';
 import { InfoBanner } from '@/components/InfoBanner';
@@ -48,13 +47,11 @@ export default function HomeScreen() {
           />
         )}
 
+        <FastingCard onPress={() => navigateTo(0)} />
+
         <DailySummaryRow onRoutinePress={() => navigateTo(1)} onTodoPress={() => navigateTo(3)} />
 
-        <HomeTodayRoutines onViewAll={() => navigateTo(1)} />
-
         <HomeWeeklyGrass />
-
-        <FastingCard onPress={() => navigateTo(0)} />
       </ScrollView>
     </SafeAreaView>
   );
