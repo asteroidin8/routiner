@@ -1,6 +1,7 @@
 import { Dimensions, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
+import { GRASS_COPY } from '@/constants/copy';
 import { spacing } from '@/constants/spacing';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
@@ -38,13 +39,13 @@ export function ContributionGrid() {
 
   const summary =
     monthStats.daysWithRoutines > 0
-      ? `이번 달 ${Math.round(monthStats.rate * 100)}% (${monthStats.daysFullyComplete}/${monthStats.daysWithRoutines})`
-      : '루틴을 추가하면 잔디가 자라요';
+      ? `이번 달 달성률 ${Math.round(monthStats.rate * 100)}% (${monthStats.daysFullyComplete}/${monthStats.daysWithRoutines})`
+      : GRASS_COPY.gridHint;
 
   return (
     <View style={{ gap: spacing.sm, minHeight: SCREEN_WIDTH * 0.38 }}>
       <AppText variant="caption" tone="tertiary">
-        나의 잔디
+        {GRASS_COPY.myGrass}
       </AppText>
 
       {showEmpty ? (
@@ -57,7 +58,7 @@ export function ContributionGrid() {
           }}
         >
           <AppText variant="body" tone="secondary" style={{ textAlign: 'center', lineHeight: 22 }}>
-            아직 잔디가 없네요 🌱{'\n'}오늘부터 시작해볼까요?
+            {GRASS_COPY.gridEmpty}
           </AppText>
         </View>
       ) : (

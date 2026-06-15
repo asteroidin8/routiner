@@ -1,35 +1,24 @@
 # 홈 대시보드 UI — zndi (잔디)
 
-> `docs/design-system.md` 토큰 기준 · Expo Router `app/(tabs)/index.tsx`
+> `docs/design-system.md` · `docs/copy-guide.md`
 
-## 레이아웃 (Top → Bottom)
+## 잔디 탭 = 오늘 요약
 
-1. **TopBar** — zndi · 오늘 날짜 · 스트릭 · 설정
-2. **ContributionGrid** — 7×6 GitHub 스타일 (최근 ~42일)
-3. **Today** — 오늘 루틴 카드 + 완료 애니메이션
-4. **Bento** — Streak / 이번 달 완료일 / 완료율
-5. **FastingCard** — 단식 (보조)
+1. **TopBar** — zndi · 날짜 · 🔥 연속 · 설정
+2. **DailySummaryRow** — 루틴/할일 바로가기
+3. **오늘의 잔디** — 오늘 루틴 체크
+4. **이번 주 잔디** — 7칸만
+5. **단식 카드**
 
-## ContributionGrid
+## 통계 탭 = 회고
 
-| 상태 | 색 |
-|------|-----|
-| 루틴 없음 | 투명 |
-| 미완료 | `#1E1E1E` |
-| 부분 완료 | `#4ADE80` @ 50% |
-| 전체 완료 | `#22C55E` + glow |
-| 오늘 | border + scale 1.12 |
-
-## Empty
-
-루틴·완료 기록 거의 없음 → 「아직 잔디가 없네요 🌱 오늘부터 시작해볼까요?」
+1. **나의 잔디** — 42일 ContributionGrid
+2. **Bento** — 연속 · 이번 달 · 달성률
+3. 단식·월간 캘린더 등 기존 통계
 
 ## 컴포넌트
 
-| 파일 | 역할 |
-|------|------|
-| `src/utils/contributionGrid.ts` | 그리드·월간 통계 |
-| `src/components/ContributionGrid.tsx` | 잔디 그리드 |
-| `src/components/home/HomeTopBar.tsx` | 상단 바 |
-| `src/components/home/HomeTodayRoutines.tsx` | 오늘 루틴 |
-| `src/components/home/HomeBentoStats.tsx` | 요약 카드 |
+| 파일 | 탭 |
+|------|-----|
+| `HomeTopBar` · `HomeTodayRoutines` · `HomeWeeklyGrass` | 잔디 |
+| `ContributionGrid` · `StatsBentoStats` | 통계 |

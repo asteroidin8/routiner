@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TabBarIcon } from '@/components/TabBarIcon';
 import { AppText } from '@/components/AppText';
+import { TAB_LABELS } from '@/constants/copy';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { TabNavigationContext, type TabIndex } from '@/contexts/TabNavigationContext';
 import { feedbackTabSwitch } from '@/utils/microFeedback';
@@ -17,11 +18,11 @@ import TodoScreen from './todo';
 import StatsScreen from './stats';
 
 const TABS = [
-  { key: 'fasting', title: '단식', icon: 'Timer' },
-  { key: 'routine', title: '루틴', icon: 'CheckSquare' },
-  { key: 'home', title: '홈', icon: 'Home' },
-  { key: 'todo', title: '할일', icon: 'ListTodo' },
-  { key: 'stats', title: '통계', icon: 'BarChart2' },
+  { key: 'fasting', title: TAB_LABELS.fasting, icon: 'Timer' },
+  { key: 'routine', title: TAB_LABELS.routine, icon: 'CheckSquare' },
+  { key: 'home', title: TAB_LABELS.home, icon: 'Home' },
+  { key: 'todo', title: TAB_LABELS.todo, icon: 'ListTodo' },
+  { key: 'stats', title: TAB_LABELS.stats, icon: 'BarChart2' },
 ] as const;
 
 const HOME_INDEX = 2;

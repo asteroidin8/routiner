@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { spacing } from '@/constants/spacing';
+import { STATS_BENTO } from '@/constants/copy';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
@@ -23,7 +24,8 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function HomeBentoStats() {
+/** 통계 — 연속 · 이번 달 · 달성률 */
+export function StatsBentoStats() {
   const { routines } = useRoutineStore();
   const { isCompleted } = useRoutineCompletionStore();
   const streak = getRoutineStreakDays(routines, isCompleted);
@@ -31,13 +33,13 @@ export function HomeBentoStats() {
 
   return (
     <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-      <StatCard label="Streak" value={streak > 0 ? `${streak}일` : '—'} />
+      <StatCard label={STATS_BENTO.streak} value={streak > 0 ? `${streak}일` : '—'} />
       <StatCard
-        label="이번 달"
+        label={STATS_BENTO.monthDays}
         value={month.daysFullyComplete > 0 ? `${month.daysFullyComplete}일` : '—'}
       />
       <StatCard
-        label="완료율"
+        label={STATS_BENTO.achievementRate}
         value={month.daysWithRoutines > 0 ? `${Math.round(month.rate * 100)}%` : '—'}
       />
     </View>

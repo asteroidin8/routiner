@@ -1,10 +1,11 @@
 import { Pressable, View } from 'react-native';
 
-import { AppText } from '@/components/AppText';
-import { Card } from '@/components/Card';
-import { Divider } from '@/components/Divider';
-import { RoutineItem } from '@/components/RoutineItem';
-import { SectionHeader } from '@/components/SectionHeader';
+import { AppText } from '../AppText';
+import { Card } from '../Card';
+import { Divider } from '../Divider';
+import { RoutineItem } from '../RoutineItem';
+import { SectionHeader } from '../SectionHeader';
+import { HOME_COPY } from '@/constants/copy';
 import { spacing } from '@/constants/spacing';
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
 import { type Routine, type Weekday, useRoutineStore } from '@/stores/useRoutineStore';
@@ -29,11 +30,16 @@ export function HomeTodayRoutines({ onViewAll }: Props) {
   return (
     <View style={{ gap: spacing.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <SectionHeader title="Today" />
+        <SectionHeader title={HOME_COPY.todaySection} />
         {todayRoutines.length > 0 && (
-          <Pressable onPress={onViewAll} hitSlop={8} accessibilityRole="button" accessibilityLabel="루틴 전체 보기">
+          <Pressable
+            onPress={onViewAll}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="루틴 전체 보기"
+          >
             <AppText variant="caption" tone="tertiary">
-              전체
+              {HOME_COPY.viewAllRoutines}
             </AppText>
           </Pressable>
         )}
@@ -42,7 +48,7 @@ export function HomeTodayRoutines({ onViewAll }: Props) {
       {todayRoutines.length === 0 ? (
         <Card>
           <AppText variant="body" tone="secondary">
-            오늘 예정된 루틴이 없어요
+            {HOME_COPY.todayEmpty}
           </AppText>
         </Card>
       ) : (

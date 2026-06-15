@@ -122,7 +122,7 @@ export default function TodoScreen() {
   }
 
   function renderDraggableItem(priority: TodoPriority) {
-    return function ({ item, drag }: RenderItemParams<Todo>) {
+    return function TodoListRow({ item, drag }: RenderItemParams<Todo>) {
       return (
         <ScaleDecorator activeScale={1.02}>
           <SwipeActions

@@ -13,13 +13,11 @@ import { useFastingNotification } from '@/hooks/useFastingNotification';
 import { useMidnightArchive } from '@/hooks/useMidnightArchive';
 import { useRoutineNotifications } from '@/hooks/useRoutineNotifications';
 import { useTodoNotifications } from '@/hooks/useTodoNotifications';
-import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { initSentry } from '@/utils/sentry';
 import { setupNotificationHandler } from '@/utils/notifications';
 
 function AppContent() {
-  const c = useThemeColors();
   const themeMode = useSettingsStore((s) => s.themeMode);
   const systemScheme = useColorScheme();
   const isDark =

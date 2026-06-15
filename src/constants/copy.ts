@@ -1,0 +1,40 @@
+/** zndi 앱 카피 — 톤: 부드러운 해요체, 짧고 담백 */
+
+export const TAB_LABELS = {
+  fasting: '단식',
+  routine: '루틴',
+  home: '잔디',
+  todo: '할일',
+  stats: '통계',
+} as const;
+
+export const HOME_COPY = {
+  todaySection: '오늘의 잔디',
+  weekSection: '이번 주 잔디',
+  todayEmpty: '오늘 심을 잔디가 없어요',
+  viewAllRoutines: '전체',
+} as const;
+
+export const GRASS_COPY = {
+  myGrass: '나의 잔디',
+  gridEmpty: '아직 잔디가 없어요.\n오늘부터 하나 심어볼까요?',
+  gridHint: '루틴을 추가하면 잔디가 자라요',
+} as const;
+
+export const STATS_BENTO = {
+  streak: '연속',
+  monthDays: '이번 달',
+  achievementRate: '달성률',
+} as const;
+
+export const ONBOARDING = {
+  slide1Title: 'zndi에 오신 걸\n환영해요',
+  slide1Body: '매일 조금씩,\n나만의 잔디를 키워보세요.',
+  slide2Title: '꾸준히 심어요',
+  slide2Body: '루틴을 심고 통계에서 흐름을 확인해요.',
+  slide3Title: '프로필은 선택이에요',
+  slide3Body: '키·체중을 입력하면 칼로리 계산이 가능해요. 설정에서 언제든 바꿀 수 있어요.',
+  ctaStart: '잔디 심으러 가기',
+  ctaNext: '다음',
+  skip: '건너뛰기',
+} as const;

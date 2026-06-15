@@ -6,23 +6,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
+import { ONBOARDING } from '@/constants/copy';
 import { spacing } from '@/constants/spacing';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 
 const SLIDES = [
-  {
-    title: '잔디에 오신 것을\n환영해요',
-    body: '단식·루틴·할 일을 한곳에서 관리하세요.',
-  },
-  {
-    title: '습관을 쌓아가요',
-    body: '루틴 완료와 단식 기록을 추적하고, 통계로 변화를 확인해요.',
-  },
-  {
-    title: '프로필은 선택이에요',
-    body: '키·체중을 입력하면 칼로리 계산이 가능해요. 설정에서 언제든 변경할 수 있어요.',
-  },
+  { title: ONBOARDING.slide1Title, body: ONBOARDING.slide1Body },
+  { title: ONBOARDING.slide2Title, body: ONBOARDING.slide2Body },
+  { title: ONBOARDING.slide3Title, body: ONBOARDING.slide3Body },
 ] as const;
 
 export default function OnboardingScreen() {
@@ -44,6 +36,8 @@ export default function OnboardingScreen() {
     finish();
   }
 
+  const isLast = page === SLIDES.length - 1;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }}>
       <PagerView
@@ -62,9 +56,7 @@ export default function OnboardingScreen() {
               gap: spacing.section,
             }}
           >
-            <AppText variant="headline">
-              {slide.title}
-            </AppText>
+            <AppText variant="headline">{slide.title}</AppText>
             <AppText variant="body" tone="secondary" style={{ lineHeight: 22 }}>
               {slide.body}
             </AppText>
@@ -86,15 +78,20 @@ export default function OnboardingScreen() {
             />
           ))}
         </View>
-        <Card pressable onPress={next} accessibilityRole="button" accessibilityLabel={page < SLIDES.length - 1 ? '다음' : '시작하기'}>
+        <Card
+          pressable
+          onPress={next}
+          accessibilityRole="button"
+          accessibilityLabel={isLast ? ONBOARDING.ctaStart : ONBOARDING.ctaNext}
+        >
           <AppText variant="body" style={{ textAlign: 'center', fontWeight: '600' }}>
-            {page < SLIDES.length - 1 ? '다음' : '시작하기'}
+            {isLast ? ONBOARDING.ctaStart : ONBOARDING.ctaNext}
           </AppText>
         </Card>
-        {page < SLIDES.length - 1 && (
-          <Pressable onPress={finish} accessibilityRole="button" accessibilityLabel="건너뛰기">
+        {!isLast && (
+          <Pressable onPress={finish} accessibilityRole="button" accessibilityLabel={ONBOARDING.skip}>
             <AppText variant="caption" tone="tertiary" style={{ textAlign: 'center' }}>
-              건너뛰기
+              {ONBOARDING.skip}
             </AppText>
           </Pressable>
         )}

@@ -95,7 +95,7 @@ export default function RoutineScreen() {
   }
 
   function renderRoutineItem(onToggle: (id: string) => void, allowComplete: boolean) {
-    return function ({ item, drag }: RenderItemParams<Routine>) {
+    return function RoutineListRow({ item, drag }: RenderItemParams<Routine>) {
       const completed = isCompleted(item.id, todayStr);
 
       return (
