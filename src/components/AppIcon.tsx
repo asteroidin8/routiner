@@ -18,7 +18,9 @@ export function AppIcon({ name, size = 20, color, strokeWidth = 1.5 }: Props) {
     color: string;
     size: number;
     strokeWidth: number;
-  }>;
+  }> | undefined;
+
+  if (!Icon) return null;
 
   return <Icon color={color ?? c.ink} size={size} strokeWidth={strokeWidth} />;
 }

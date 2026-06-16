@@ -45,13 +45,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const sub = Linking.addEventListener('url', ({ url }) => {
-      if (url.includes('auth/callback')) {
-        void handleAuthCallbackUrl(url);
-      }
+      if (!url.includes('auth/callback')) return;
+      void (async () => {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const { data } = await supabase.auth.getSession();
+        if (data.session) return;
+        await handleAuthCallbackUrl(url);
+      })();
     });
 
     Linking.getInitialURL().then((url) => {
-      if (url?.includes('auth/callback')) void handleAuthCallbackUrl(url);
+      if (!url?.includes('auth/callback')) return;
+      void (async () => {
+        const client = getSupabase();
+        if (!client) return;
+        const { data } = await client.auth.getSession();
+        if (data.session) return;
+        await handleAuthCallbackUrl(url);
+      })();
     });
 
     return () => {

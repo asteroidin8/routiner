@@ -8,6 +8,7 @@ import { AppText } from '@/components/AppText';
 import { spacing } from '@/constants/spacing';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { handleAuthCallbackUrl } from '@/services/auth/authSession';
+import { getSupabase } from '@/lib/supabase';
 
 export default function AuthCallbackScreen() {
   const router = useRouter();
@@ -27,6 +28,16 @@ export default function AuthCallbackScreen() {
       }
 
       handled.current = true;
+
+      const supabase = getSupabase();
+      if (supabase) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          router.replace('/settings');
+          return;
+        }
+      }
+
       const result = await handleAuthCallbackUrl(callbackUrl);
       if (cancelled) return;
 
