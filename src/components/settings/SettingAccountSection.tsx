@@ -47,10 +47,15 @@ export function SettingAccountSection() {
 
   async function handleGoogle() {
     setBusy(true);
-    const result = await signInGoogle();
-    setBusy(false);
-    if (result.cancelled) return;
-    if (result.error) Alert.alert('로그인 실패', result.error);
+    try {
+      const result = await signInGoogle();
+      if (result.cancelled) return;
+      if (result.error) Alert.alert('로그인 실패', result.error);
+    } catch {
+      Alert.alert('로그인 실패', '로그인 중 오류가 발생했어요.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleSendOtp() {
@@ -155,7 +160,7 @@ export function SettingAccountSection() {
 
   if (!user) {
     return (
-      <>
+      <View>
         <StandaloneSettingsCard>
           <Pressable
             onPress={handleGoogle}
@@ -225,7 +230,7 @@ export function SettingAccountSection() {
         </StandaloneSettingsCard>
 
         <SettingSection title="계정">{profileRowNode}</SettingSection>
-      </>
+      </View>
     );
   }
 
