@@ -10,7 +10,8 @@ export function initSentry() {
 
   Sentry.init({
     dsn,
-    debug: __DEV__,
+    // __DEV__에서 true면 console.warn/error → LogBox "Console Error" + errorForStackTrace 노이즈
+    debug: process.env.EXPO_PUBLIC_SENTRY_DEBUG === '1',
   });
 }
 
