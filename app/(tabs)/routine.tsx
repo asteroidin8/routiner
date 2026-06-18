@@ -12,7 +12,7 @@ import { RoutineItem } from '@/components/RoutineItem';
 import { RoutineModal } from '@/components/RoutineModal';
 import { SwipeActions } from '@/components/SwipeActions';
 import { UndoSnackbar } from '@/components/UndoSnackbar';
-import { spacing } from '@/constants/spacing';
+import { radius, spacing } from '@/constants/spacing';
 import { useTabScrollToTop } from '@/contexts/TabNavigationContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -139,8 +139,8 @@ export default function RoutineScreen() {
           justifyContent: 'space-between',
           alignItems: 'center',
           paddingHorizontal: spacing.screen,
-          paddingTop: 16,
-          paddingBottom: 8,
+          paddingTop: spacing.card,
+          paddingBottom: spacing.sm,
         }}
       >
         <AppText variant="title">루틴</AppText>
@@ -168,11 +168,11 @@ export default function RoutineScreen() {
             <View
               style={{
                 marginHorizontal: spacing.screen,
-                marginTop: 8,
+                marginTop: spacing.sm,
                 marginBottom: spacing.xs,
-                paddingHorizontal: 14,
-                paddingVertical: 12,
-                borderRadius: 12,
+                paddingHorizontal: spacing.item,
+                paddingVertical: spacing.md,
+                borderRadius: radius.md,
                 backgroundColor: c.surfaceSubtle,
                 borderWidth: 1,
                 borderColor: c.border,

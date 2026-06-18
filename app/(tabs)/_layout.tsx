@@ -1,6 +1,5 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, View } from 'react-native';
-import PagerView from 'react-native-pager-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TabBarIcon } from '@/components/TabBarIcon';
@@ -11,33 +10,34 @@ import { TabNavigationContext, type TabIndex } from '@/contexts/TabNavigationCon
 import { feedbackTabSwitch } from '@/utils/microFeedback';
 import { useTodoStore } from '@/stores/useTodoStore';
 
-import FastingScreen from './fasting';
-import RoutineScreen from './routine';
 import HomeScreen from './index';
+import RoutineScreen from './routine';
 import TodoScreen from './todo';
 import StatsScreen from './stats';
 
 const TABS = [
-  { key: 'fasting', title: TAB_LABELS.fasting, icon: 'Timer' },
-  { key: 'routine', title: TAB_LABELS.routine, icon: 'CheckSquare' },
   { key: 'home', title: TAB_LABELS.home, icon: 'Home' },
+  { key: 'routine', title: TAB_LABELS.routine, icon: 'CheckSquare' },
   { key: 'todo', title: TAB_LABELS.todo, icon: 'ListTodo' },
   { key: 'stats', title: TAB_LABELS.stats, icon: 'BarChart2' },
 ] as const;
 
-const HOME_INDEX = 2;
-const TODO_INDEX = 3;
+const HOME_INDEX = 0;
+const TODO_INDEX = 2;
+
+const SCREENS = [HomeScreen, RoutineScreen, TodoScreen, StatsScreen];
 
 export default function TabLayout() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
-  const pagerRef = useRef<PagerView>(null);
-  const [activeTab, setActiveTab] = useState<TabIndex>(HOME_INDEX);
+  const [activeTab, setActiveTab] = useState<TabIndex>(HOME_INDEX as TabIndex);
   const [scrollTick, setScrollTick] = useState<Record<number, number>>({});
   const activeTodoCount = useTodoStore((s) => s.todos.filter((t) => !t.completedAt).length);
 
   function navigateTo(index: TabIndex) {
-    pagerRef.current?.setPage(index);
+    if (activeTab !== index) {
+      feedbackTabSwitch();
+    }
     setActiveTab(index);
   }
 
@@ -47,38 +47,17 @@ export default function TabLayout() {
 
   function handleTabPress(index: TabIndex) {
     if (activeTab === index) scrollToTop(index);
-    else {
-      feedbackTabSwitch();
-      navigateTo(index);
-    }
+    else navigateTo(index);
   }
+
+  const ActiveScreen = SCREENS[activeTab];
 
   return (
     <TabNavigationContext.Provider value={{ navigateTo, scrollTick, scrollToTop }}>
       <View style={{ flex: 1, backgroundColor: c.surface }}>
-        <PagerView
-          ref={pagerRef}
-          style={{ flex: 1 }}
-          initialPage={HOME_INDEX}
-          onPageSelected={(e) => setActiveTab(e.nativeEvent.position as TabIndex)}
-          overdrag
-        >
-          <View key="fasting" style={{ flex: 1 }}>
-            <FastingScreen />
-          </View>
-          <View key="routine" style={{ flex: 1 }}>
-            <RoutineScreen />
-          </View>
-          <View key="home" style={{ flex: 1 }}>
-            <HomeScreen />
-          </View>
-          <View key="todo" style={{ flex: 1 }}>
-            <TodoScreen />
-          </View>
-          <View key="stats" style={{ flex: 1 }}>
-            <StatsScreen />
-          </View>
-        </PagerView>
+        <View style={{ flex: 1 }}>
+          <ActiveScreen />
+        </View>
 
         <View
           style={{

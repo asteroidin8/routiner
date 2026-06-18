@@ -1,11 +1,10 @@
 /** zndi 앱 카피 — 톤: 부드러운 해요체, 짧고 담백 */
 
 export const TAB_LABELS = {
-  fasting: '단식',
+  home: '오늘',
   routine: '루틴',
-  home: '홈',
   todo: '할일',
-  stats: '통계',
+  stats: '잔디',
 } as const;
 
 export const HOME_COPY = {
