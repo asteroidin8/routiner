@@ -3,7 +3,7 @@ import '../global.css';
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme, View } from 'react-native';
+import { LogBox, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AppErrorBoundary } from '@/components/AppErrorBoundary';
@@ -16,6 +16,14 @@ import { useTodoNotifications } from '@/hooks/useTodoNotifications';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { initSentry } from '@/utils/sentry';
 import { setupNotificationHandler } from '@/utils/notifications';
+
+if (__DEV__) {
+  LogBox.ignoreLogs([
+    'Sentry Logger',
+    '[Native] [Sentry]',
+    'Current session is not ended',
+  ]);
+}
 
 function AppContent() {
   const themeMode = useSettingsStore((s) => s.themeMode);
