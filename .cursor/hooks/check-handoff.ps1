@@ -1,48 +1,25 @@
-# Shared: read handoff.json from project root
-param(
-  [switch]$OnWrite
-)
-
+# stop hook — handoff READY → followup_message (Git Manager)
 $ErrorActionPreference = 'SilentlyContinue'
 
-$stdin = [Console]::In.ReadToEnd()
-if ($OnWrite -and $stdin) {
-  try {
-    $payload = $stdin | ConvertFrom-Json
-    $path = "$($payload.tool_input.path)$($payload.file_path)$($payload.path)"
-    if ($path -and $path -notmatch 'handoff\.json') {
-      exit 0
-    }
-  } catch {
-    # fall through — still check handoff on disk
-  }
-}
+$null = [Console]::In.ReadToEnd()
 
-$root = Get-Location
-$handoffPath = Join-Path $root 'handoff.json'
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+$handoffPath = Join-Path $projectRoot 'handoff.json'
 
-if (-not (Test-Path $handoffPath)) {
-  exit 0
-}
+if (-not (Test-Path $handoffPath)) { exit 0 }
 
 try {
   $handoff = Get-Content -Path $handoffPath -Raw -Encoding UTF8 | ConvertFrom-Json
-} catch {
-  exit 0
-}
+} catch { exit 0 }
 
-if ($handoff.status -ne 'READY') {
-  exit 0
-}
+if ($handoff.status -ne 'READY') { exit 0 }
 
-$msg = @'
-handoff.json status is READY. Git Manager role only (docs/agent/composer.md, reviewer.md).
+$followup = @'
+handoff.json status is READY. Git Manager only (docs/agent/composer.md).
 
-- No implementation/refactor
-- Commit only files_changed / commit_groups
-- pre-merge validation, minimal commits, push, PR, squash merge
-- Set handoff.json status = DONE when merged
+Validate diff, commit_groups, push, PR, squash merge, handoff DONE.
+No new implementation.
 '@
 
-@{ followup_message = $msg.Trim() } | ConvertTo-Json -Compress
+@{ followup_message = $followup.Trim() } | ConvertTo-Json -Compress
 exit 0
