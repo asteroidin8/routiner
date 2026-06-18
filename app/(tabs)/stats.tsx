@@ -36,7 +36,7 @@ import {
   type DailyGrassActivity,
 } from '@/utils/calendarGrass';
 
-const TAB_INDEX = 4 as const;
+const TAB_INDEX = 3 as const;
 const L = STATS_LABELS;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CELL_SIZE = Math.floor((SCREEN_WIDTH - 40 - 6 * 6) / 7);

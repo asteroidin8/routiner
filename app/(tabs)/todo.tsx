@@ -24,7 +24,7 @@ import { type Todo, type TodoPriority, useTodoStore } from '@/stores/useTodoStor
 
 type TabFilter = 'active' | 'completed';
 
-const TAB_INDEX = 3 as const;
+const TAB_INDEX = 2 as const;
 
 const PRIORITY_SECTIONS: { key: TodoPriority; label: string }[] = [
   { key: 'high', label: '높음' },
@@ -309,8 +309,8 @@ function Header({
           justifyContent: 'space-between',
           alignItems: 'center',
           paddingHorizontal: spacing.screen,
-          paddingTop: 16,
-          paddingBottom: 8,
+          paddingTop: spacing.card,
+          paddingBottom: spacing.sm,
         }}
       >
         <AppText variant="title">할일</AppText>

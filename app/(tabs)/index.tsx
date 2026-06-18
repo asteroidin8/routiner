@@ -14,7 +14,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useUserStore } from '@/stores/useUserStore';
 import { isProfileIncomplete } from '@/utils/profile';
 
-const TAB_INDEX = 2 as const;
+const TAB_INDEX = 0 as const;
 
 export default function HomeScreen() {
   const c = useThemeColors();
@@ -47,9 +47,9 @@ export default function HomeScreen() {
           />
         )}
 
-        <FastingCard onPress={() => navigateTo(0)} />
+        <FastingCard />
 
-        <DailySummaryRow onRoutinePress={() => navigateTo(1)} onTodoPress={() => navigateTo(3)} />
+        <DailySummaryRow onRoutinePress={() => navigateTo(1)} onTodoPress={() => navigateTo(2)} />
 
         <HomeWeeklyGrass />
       </ScrollView>
