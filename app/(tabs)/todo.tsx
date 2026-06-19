@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
-import { FlatList, Pressable, ScrollView, View } from 'react-native';
+import { Alert, FlatList, Pressable, ScrollView, TextInput, View } from 'react-native';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedListItem } from '@/components/AnimatedListItem';
+import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { Coachmark } from '@/components/Coachmark';
 import { Divider } from '@/components/Divider';
@@ -20,7 +21,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { getPriorityColor } from '@/utils/dateFormat';
 import { runAfterDragAnimation } from '@/utils/deferredReorder';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { type Todo, type TodoPriority, useTodoStore } from '@/stores/useTodoStore';
+import { type Todo, type TodoGroup, type TodoPriority, useTodoStore } from '@/stores/useTodoStore';
 
 type TabFilter = 'active' | 'completed';
 
@@ -47,14 +48,14 @@ function PriorityBadge({ priority }: { priority: TodoPriority }) {
   );
 }
 
-function SectionHeader({ label, priority, count }: { label: string; priority: TodoPriority; count: number }) {
+function PrioritySectionHeader({ label, priority, count }: { label: string; priority: TodoPriority; count: number }) {
   const c = useThemeColors();
   return (
     <View
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 10,
+        paddingVertical: spacing.sm + 2,
         paddingHorizontal: spacing.screen,
         backgroundColor: c.surface,
       }}
@@ -70,23 +71,87 @@ function SectionHeader({ label, priority, count }: { label: string; priority: To
   );
 }
 
+function GroupHeader({
+  group,
+  completedCount,
+  totalCount,
+  onToggleCollapse,
+  onRename,
+  onDelete,
+}: {
+  group: TodoGroup;
+  completedCount: number;
+  totalCount: number;
+  onToggleCollapse: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  const c = useThemeColors();
+
+  return (
+    <Pressable
+      onPress={onToggleCollapse}
+      onLongPress={onRename}
+      accessibilityRole="button"
+      accessibilityLabel={`${group.name} 그룹, ${completedCount}/${totalCount} 완료`}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: spacing.sm + 2,
+        paddingHorizontal: spacing.screen,
+        backgroundColor: c.surface,
+        gap: spacing.sm,
+      }}
+    >
+      <AppIcon
+        name={group.collapsed ? 'ChevronRight' : 'ChevronDown'}
+        size={14}
+        color={c.inkTertiary}
+      />
+      <AppText variant="body" style={{ fontWeight: '600', flex: 1 }}>
+        {group.name}
+      </AppText>
+      <AppText variant="caption" tone="tertiary">
+        {completedCount}/{totalCount}
+      </AppText>
+    </Pressable>
+  );
+}
+
 export default function TodoScreen() {
   const c = useThemeColors();
   const scrollRef = useRef<ScrollView>(null);
   useTabScrollToTop(TAB_INDEX, scrollRef);
 
-  const { todos, addTodo, updateTodo, completeTodo, uncompleteTodo, removeTodo, reorderTodos, toggleTodoHomePin } =
-    useTodoStore();
+  const {
+    todos,
+    groups,
+    addTodo,
+    updateTodo,
+    completeTodo,
+    uncompleteTodo,
+    removeTodo,
+    reorderTodos,
+    addGroup,
+    updateGroup,
+    removeGroup,
+    toggleGroupCollapsed,
+  } = useTodoStore();
   const { seenHints, markHintSeen } = useSettingsStore();
 
   const [filter, setFilter] = useState<TabFilter>('active');
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [editTarget, setEditTarget] = useState<Todo | null>(null);
   const [undoTarget, setUndoTarget] = useState<Todo | null>(null);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [showGroupInput, setShowGroupInput] = useState(false);
 
   const activeTodos = todos.filter((t) => !t.completedAt);
   const completedTodos = todos.filter((t) => !!t.completedAt);
   const showSwipeHint = !seenHints.swipeActions && todos.length > 0;
+
+  const sortedGroups = [...groups].sort((a, b) => a.order - b.order);
+  const ungroupedActive = activeTodos.filter((t) => !t.groupId);
 
   function handleAdd({ title, priority, dueDate, pinnedToHome }: TodoCreatePayload) {
     const samePriorityCount = todos.filter((t) => t.priority === priority && !t.completedAt).length;
@@ -105,6 +170,7 @@ export default function TodoScreen() {
       order: samePriorityCount,
       pinnedToHome,
       pinOrder: pinnedToHome ? maxPinOrder + 1 : 0,
+      groupId: null,
     });
     setAddModalVisible(false);
   }
@@ -121,31 +187,67 @@ export default function TodoScreen() {
     setEditTarget(null);
   }
 
-  function renderDraggableItem(priority: TodoPriority) {
-    return function TodoListRow({ item, drag }: RenderItemParams<Todo>) {
-      return (
-        <ScaleDecorator activeScale={1.02}>
-          <SwipeActions
-            onDelete={() => {
-              setUndoTarget(item);
-              removeTodo(item.id);
-            }}
-            onComplete={() => completeTodo(item.id)}
-          >
-            <View>
-              <TodoItem
-                todo={item}
-                onToggle={() => completeTodo(item.id)}
-                onLongPress={drag}
-                onPress={() => setEditTarget(item)}
-                onToggleHomePin={() => toggleTodoHomePin(item.id)}
-              />
-              <Divider />
-            </View>
-          </SwipeActions>
-        </ScaleDecorator>
-      );
-    };
+  function handleCreateGroup() {
+    if (!newGroupName.trim()) return;
+    addGroup({
+      id: String(Date.now()),
+      name: newGroupName.trim(),
+      order: groups.length,
+      collapsed: false,
+    });
+    setNewGroupName('');
+    setShowGroupInput(false);
+  }
+
+  function handleRenameGroup(group: TodoGroup) {
+    Alert.prompt?.(
+      '그룹 이름 변경',
+      '',
+      (text) => {
+        if (text?.trim()) updateGroup(group.id, { name: text.trim() });
+      },
+      'plain-text',
+      group.name,
+    ) ??
+      Alert.alert('그룹 관리', group.name, [
+        { text: '삭제', style: 'destructive', onPress: () => removeGroup(group.id) },
+        { text: '닫기' },
+      ]);
+  }
+
+  function handleDeleteGroup(group: TodoGroup) {
+    Alert.alert(
+      '그룹 삭제',
+      `"${group.name}" 그룹을 삭제할까요?\n그룹 안의 할일은 유지됩니다.`,
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '삭제', style: 'destructive', onPress: () => removeGroup(group.id) },
+      ],
+    );
+  }
+
+  function renderTodoItem({ item, drag }: RenderItemParams<Todo>) {
+    return (
+      <ScaleDecorator activeScale={1.02}>
+        <SwipeActions
+          onDelete={() => {
+            setUndoTarget(item);
+            removeTodo(item.id);
+          }}
+          onComplete={() => completeTodo(item.id)}
+        >
+          <View>
+            <TodoItem
+              todo={item}
+              onToggle={() => completeTodo(item.id)}
+              onLongPress={drag}
+              onPress={() => setEditTarget(item)}
+            />
+            <Divider />
+          </View>
+        </SwipeActions>
+      </ScaleDecorator>
+    );
   }
 
   const modals = (
@@ -179,12 +281,7 @@ export default function TodoScreen() {
     const showFab = completedTodos.length > 0;
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
-        <Header
-          filter={filter}
-          setFilter={setFilter}
-          activeTodos={activeTodos}
-          completedTodos={completedTodos}
-        />
+        <Header filter={filter} setFilter={setFilter} activeTodos={activeTodos} completedTodos={completedTodos} />
         {completedTodos.length === 0 ? (
           <EmptyState message="아직 완료한 일이 없어요" variant="todo" />
         ) : (
@@ -196,19 +293,12 @@ export default function TodoScreen() {
             renderItem={({ item: todo, index: i }) => (
               <AnimatedListItem itemKey={todo.id} index={i}>
                 <SwipeActions
-                  onDelete={() => {
-                    setUndoTarget(todo);
-                    removeTodo(todo.id);
-                  }}
+                  onDelete={() => { setUndoTarget(todo); removeTodo(todo.id); }}
                   onComplete={() => uncompleteTodo(todo.id)}
                   completeLabel="되돌리기"
                 >
                   <View style={{ paddingHorizontal: spacing.screen }}>
-                    <TodoItem
-                      todo={todo}
-                      onToggle={() => uncompleteTodo(todo.id)}
-                      onPress={() => setEditTarget(todo)}
-                    />
+                    <TodoItem todo={todo} onToggle={() => uncompleteTodo(todo.id)} onPress={() => setEditTarget(todo)} />
                     {i < completedTodos.length - 1 && <Divider />}
                   </View>
                 </SwipeActions>
@@ -216,12 +306,7 @@ export default function TodoScreen() {
             )}
           />
         )}
-        {showFab && (
-          <FloatingAddButton
-            onPress={() => setAddModalVisible(true)}
-            accessibilityLabel="할일 추가"
-          />
-        )}
+        {showFab && <FloatingAddButton onPress={() => setAddModalVisible(true)} accessibilityLabel="할일 추가" />}
         {modals}
       </SafeAreaView>
     );
@@ -231,14 +316,9 @@ export default function TodoScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
-      <Header
-        filter={filter}
-        setFilter={setFilter}
-        activeTodos={activeTodos}
-        completedTodos={completedTodos}
-      />
+      <Header filter={filter} setFilter={setFilter} activeTodos={activeTodos} completedTodos={completedTodos} />
 
-      {!hasTodos ? (
+      {!hasTodos && groups.length === 0 ? (
         <EmptyState
           message={`오늘 해낼 일을 적어봐요\n작은 한 걸음이 습관이 돼요`}
           actionLabel="할 일 추가하기"
@@ -251,37 +331,116 @@ export default function TodoScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100 }}
         >
-          {PRIORITY_SECTIONS.map(({ key, label }) => {
-            const items = activeTodos
-              .filter((t) => t.priority === key)
+          {/* 그룹 섹션 */}
+          {sortedGroups.map((group) => {
+            const groupTodos = activeTodos
+              .filter((t) => t.groupId === group.id)
               .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-            if (items.length === 0) return null;
+            const groupCompleted = todos.filter((t) => t.groupId === group.id && !!t.completedAt);
+
             return (
-              <View key={key}>
-                <SectionHeader label={label} priority={key} count={items.length} />
-                <View style={{ paddingHorizontal: spacing.screen }}>
-                  <DraggableFlatList
-                    data={items}
-                    keyExtractor={(item) => item.id}
-                    onDragEnd={({ data }) =>
-                      runAfterDragAnimation(() => reorderTodos(key, data))
-                    }
-                    renderItem={renderDraggableItem(key)}
-                    scrollEnabled={false}
-                    activationDistance={4}
-                  />
-                </View>
+              <View key={group.id}>
+                <GroupHeader
+                  group={group}
+                  completedCount={groupCompleted.length}
+                  totalCount={groupTodos.length + groupCompleted.length}
+                  onToggleCollapse={() => toggleGroupCollapsed(group.id)}
+                  onRename={() => handleRenameGroup(group)}
+                  onDelete={() => handleDeleteGroup(group)}
+                />
+                {!group.collapsed && groupTodos.length > 0 && (
+                  <View style={{ paddingHorizontal: spacing.screen }}>
+                    {groupTodos.map((todo, i) => (
+                      <View key={todo.id}>
+                        <SwipeActions
+                          onDelete={() => { setUndoTarget(todo); removeTodo(todo.id); }}
+                          onComplete={() => completeTodo(todo.id)}
+                        >
+                          <View>
+                            <TodoItem
+                              todo={todo}
+                              onToggle={() => completeTodo(todo.id)}
+                              onPress={() => setEditTarget(todo)}
+                            />
+                            {i < groupTodos.length - 1 && <Divider />}
+                          </View>
+                        </SwipeActions>
+                      </View>
+                    ))}
+                  </View>
+                )}
+                {!group.collapsed && groupTodos.length === 0 && groupCompleted.length === 0 && (
+                  <View style={{ paddingHorizontal: spacing.screen, paddingVertical: spacing.sm }}>
+                    <AppText variant="caption" tone="disabled">비어 있음</AppText>
+                  </View>
+                )}
+                <Divider />
               </View>
             );
           })}
+
+          {/* 그룹 추가 버튼 */}
+          {showGroupInput ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.screen, paddingVertical: spacing.sm, gap: spacing.sm }}>
+              <TextInput
+                value={newGroupName}
+                onChangeText={setNewGroupName}
+                placeholder="그룹 이름"
+                placeholderTextColor={c.inkDisabled}
+                autoFocus
+                onSubmitEditing={handleCreateGroup}
+                returnKeyType="done"
+                style={{ flex: 1, fontSize: 15, color: c.ink, borderBottomWidth: 1, borderBottomColor: c.border, paddingVertical: spacing.xs }}
+              />
+              <Pressable onPress={handleCreateGroup} hitSlop={8}>
+                <AppText variant="caption" style={{ color: c.primary, fontWeight: '700' }}>추가</AppText>
+              </Pressable>
+              <Pressable onPress={() => { setShowGroupInput(false); setNewGroupName(''); }} hitSlop={8}>
+                <AppText variant="caption" tone="tertiary">취소</AppText>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => setShowGroupInput(true)}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.screen, paddingVertical: spacing.sm + 2, gap: spacing.xs }}
+            >
+              <AppIcon name="FolderPlus" size={14} color={c.inkTertiary} />
+              <AppText variant="caption" tone="tertiary">그룹 추가</AppText>
+            </Pressable>
+          )}
+
+          {/* 그룹 없는 할일 (우선순위별) */}
+          {ungroupedActive.length > 0 && (
+            <>
+              {groups.length > 0 && <View style={{ height: spacing.sm }} />}
+              {PRIORITY_SECTIONS.map(({ key, label }) => {
+                const items = ungroupedActive
+                  .filter((t) => t.priority === key)
+                  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+                if (items.length === 0) return null;
+                return (
+                  <View key={key}>
+                    <PrioritySectionHeader label={label} priority={key} count={items.length} />
+                    <View style={{ paddingHorizontal: spacing.screen }}>
+                      <DraggableFlatList
+                        data={items}
+                        keyExtractor={(item) => item.id}
+                        onDragEnd={({ data }) => runAfterDragAnimation(() => reorderTodos(key, data))}
+                        renderItem={renderTodoItem}
+                        scrollEnabled={false}
+                        activationDistance={4}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </>
+          )}
         </ScrollView>
       )}
 
-      {hasTodos && (
-        <FloatingAddButton
-          onPress={() => setAddModalVisible(true)}
-          accessibilityLabel="할일 추가"
-        />
+      {(hasTodos || groups.length > 0) && (
+        <FloatingAddButton onPress={() => setAddModalVisible(true)} accessibilityLabel="할일 추가" />
       )}
 
       {modals}

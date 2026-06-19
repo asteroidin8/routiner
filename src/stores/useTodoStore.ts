@@ -4,21 +4,30 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 export type TodoPriority = 'high' | 'mid' | 'low';
 
+export type TodoGroup = {
+  id: string;
+  name: string;
+  order: number;
+  collapsed: boolean;
+};
+
 export type Todo = {
   id: string;
   title: string;
   priority: TodoPriority;
-  dueDate: string | null; // 'YYYY-MM-DD' 형식
-  completedAt: number | null; // Unix timestamp (ms)
-  archivedDate: string | null; // 아카이브된 날짜 'YYYY-MM-DD'
+  dueDate: string | null;
+  completedAt: number | null;
+  archivedDate: string | null;
   createdAt: number;
   order: number;
   pinnedToHome: boolean;
   pinOrder: number;
+  groupId: string | null;
 };
 
 type TodoStore = {
   todos: Todo[];
+  groups: TodoGroup[];
   lastArchiveDate: string | null;
   addTodo: (todo: Todo) => void;
   updateTodo: (id: string, updates: Partial<Todo>) => void;
@@ -29,12 +38,19 @@ type TodoStore = {
   toggleTodoHomePin: (id: string) => void;
   archiveCompletedTodos: (date: string) => void;
   setLastArchiveDate: (date: string) => void;
+  addGroup: (group: TodoGroup) => void;
+  updateGroup: (id: string, updates: Partial<TodoGroup>) => void;
+  removeGroup: (id: string) => void;
+  reorderGroups: (ordered: TodoGroup[]) => void;
+  toggleGroupCollapsed: (id: string) => void;
+  moveTodoToGroup: (todoId: string, groupId: string | null) => void;
 };
 
 export const useTodoStore = create<TodoStore>()(
   persist(
     (set) => ({
       todos: [],
+      groups: [],
       lastArchiveDate: null,
       addTodo: (todo) => set((state) => ({ todos: [...state.todos, todo] })),
       updateTodo: (id, updates) =>
@@ -100,7 +116,6 @@ export const useTodoStore = create<TodoStore>()(
             ),
           };
         }),
-      // 자정 아카이브: 완료된 항목에 archivedDate 기록, 미완료는 그대로 유지
       archiveCompletedTodos: (date) =>
         set((state) => ({
           todos: state.todos.map((t) =>
@@ -109,6 +124,29 @@ export const useTodoStore = create<TodoStore>()(
           lastArchiveDate: date,
         })),
       setLastArchiveDate: (date) => set({ lastArchiveDate: date }),
+
+      addGroup: (group) => set((state) => ({ groups: [...state.groups, group] })),
+      updateGroup: (id, updates) =>
+        set((state) => ({
+          groups: state.groups.map((g) => (g.id === id ? { ...g, ...updates } : g)),
+        })),
+      removeGroup: (id) =>
+        set((state) => ({
+          groups: state.groups.filter((g) => g.id !== id),
+          todos: state.todos.map((t) => (t.groupId === id ? { ...t, groupId: null } : t)),
+        })),
+      reorderGroups: (ordered) =>
+        set({ groups: ordered.map((g, i) => ({ ...g, order: i })) }),
+      toggleGroupCollapsed: (id) =>
+        set((state) => ({
+          groups: state.groups.map((g) =>
+            g.id === id ? { ...g, collapsed: !g.collapsed } : g,
+          ),
+        })),
+      moveTodoToGroup: (todoId, groupId) =>
+        set((state) => ({
+          todos: state.todos.map((t) => (t.id === todoId ? { ...t, groupId } : t)),
+        })),
     }),
     {
       name: 'todo-store',
