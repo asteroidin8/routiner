@@ -6,6 +6,7 @@ import * as Notifications from 'expo-notifications';
 
 import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
+import { DangerRow, GroupCard, InsetDivider, Row } from '@/components/settings/MyScreenUI';
 import { radius, spacing } from '@/constants/spacing';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -25,63 +26,6 @@ const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: 'light', label: '라이트' },
   { value: 'dark', label: '다크' },
 ];
-
-function GroupCard({ children }: { children: React.ReactNode }) {
-  const c = useThemeColors();
-  return (
-    <View style={{ backgroundColor: c.surfaceSubtle, borderRadius: radius.lg, overflow: 'hidden' }}>
-      {children}
-    </View>
-  );
-}
-
-function Row({ label, value, onPress }: { label: string; value?: string; onPress?: () => void }) {
-  const c = useThemeColors();
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={!onPress}
-      accessibilityRole={onPress ? 'button' : 'text'}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        minHeight: 48,
-        paddingHorizontal: spacing.card,
-        backgroundColor: pressed && onPress ? c.surfaceMuted : 'transparent',
-      })}
-    >
-      <AppText variant="body">{label}</AppText>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-        {value != null && <AppText variant="body" tone="tertiary">{value}</AppText>}
-        {onPress && <AppIcon name="ChevronRight" size={16} color={c.inkTertiary} />}
-      </View>
-    </Pressable>
-  );
-}
-
-function DangerRow({ label, onPress }: { label: string; onPress: () => void }) {
-  const c = useThemeColors();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={({ pressed }) => ({
-        minHeight: 48,
-        paddingHorizontal: spacing.card,
-        justifyContent: 'center',
-        backgroundColor: pressed ? c.surfaceMuted : 'transparent',
-      })}
-    >
-      <AppText variant="body" style={{ color: c.danger }}>{label}</AppText>
-    </Pressable>
-  );
-}
-
-function InsetDivider() {
-  const c = useThemeColors();
-  return <View style={{ height: 1, backgroundColor: c.borderNeutral, marginLeft: spacing.card }} />;
-}
 
 export default function MyScreen() {
   const c = useThemeColors();
@@ -195,30 +139,22 @@ export default function MyScreen() {
         {configured && !loading && user ? (
           <View style={{ alignItems: 'center', gap: spacing.sm }}>
             {editingNickname ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <TextInput
-                  value={nicknameInput}
-                  onChangeText={setNicknameInput}
-                  placeholder="닉네임 입력"
-                  placeholderTextColor={c.inkDisabled}
-                  autoFocus
-                  returnKeyType="done"
-                  onSubmitEditing={() => {
-                    setNickname(nicknameInput.trim() || null);
-                    setEditingNickname(false);
-                  }}
-                  onBlur={() => {
-                    setNickname(nicknameInput.trim() || null);
-                    setEditingNickname(false);
-                  }}
-                  style={{
-                    fontSize: 20, fontWeight: '700', color: c.ink,
-                    textAlign: 'center', minWidth: 120,
-                    borderBottomWidth: 1, borderBottomColor: c.primary,
-                    paddingVertical: spacing.xs,
-                  }}
-                />
-              </View>
+              <TextInput
+                value={nicknameInput}
+                onChangeText={setNicknameInput}
+                placeholder="닉네임 입력"
+                placeholderTextColor={c.inkDisabled}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={() => { setNickname(nicknameInput.trim() || null); setEditingNickname(false); }}
+                onBlur={() => { setNickname(nicknameInput.trim() || null); setEditingNickname(false); }}
+                style={{
+                  fontSize: 20, fontWeight: '700', color: c.ink,
+                  textAlign: 'center', minWidth: 120,
+                  borderBottomWidth: 1, borderBottomColor: c.primary,
+                  paddingVertical: spacing.xs,
+                }}
+              />
             ) : (
               <Pressable onPress={() => { setNicknameInput(profile.nickname ?? ''); setEditingNickname(true); }}>
                 <AppText variant="title" style={{ fontWeight: '700' }}>
@@ -236,14 +172,10 @@ export default function MyScreen() {
               {streak > 0 && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                   <AppIcon name="Flame" size={14} color={c.accent} />
-                  <AppText variant="caption" style={{ fontWeight: '600', color: c.accent }}>
-                    {streak}일
-                  </AppText>
+                  <AppText variant="caption" style={{ fontWeight: '600', color: c.accent }}>{streak}일</AppText>
                 </View>
               )}
-              <AppText variant="caption" tone="tertiary">
-                {totalGrass}잔디
-              </AppText>
+              <AppText variant="caption" tone="tertiary">{totalGrass}잔디</AppText>
             </View>
           </View>
         ) : configured && !loading && !user ? (
@@ -253,19 +185,15 @@ export default function MyScreen() {
               <AppText variant="caption" tone="tertiary">잔디를 기록하고 동기화해요</AppText>
             </View>
             <Pressable
-              onPress={handleGoogle}
-              disabled={busy}
-              accessibilityRole="button"
-              accessibilityLabel="Google로 로그인"
+              onPress={handleGoogle} disabled={busy}
+              accessibilityRole="button" accessibilityLabel="Google로 로그인"
               style={{
                 backgroundColor: c.primary, borderRadius: radius.md,
                 paddingVertical: spacing.md, paddingHorizontal: spacing.section,
                 alignItems: 'center', opacity: busy ? 0.6 : 1,
               }}
             >
-              <AppText variant="body" style={{ color: c.onPrimary, fontWeight: '700' }}>
-                Google로 로그인
-              </AppText>
+              <AppText variant="body" style={{ color: c.onPrimary, fontWeight: '700' }}>Google로 로그인</AppText>
             </Pressable>
             {!emailMode ? (
               <Pressable onPress={() => setEmailMode(true)} style={{ alignItems: 'center' }}>
@@ -281,9 +209,7 @@ export default function MyScreen() {
                 )}
                 <Pressable onPress={otpSent ? handleVerifyOtp : handleSendOtp} disabled={busy}
                   style={{ backgroundColor: c.surfaceMuted, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center' }}>
-                  <AppText variant="body" style={{ fontWeight: '600' }}>
-                    {otpSent ? '인증하기' : '인증 코드 받기'}
-                  </AppText>
+                  <AppText variant="body" style={{ fontWeight: '600' }}>{otpSent ? '인증하기' : '인증 코드 받기'}</AppText>
                 </Pressable>
               </View>
             )}
@@ -314,9 +240,7 @@ export default function MyScreen() {
                     <AppText variant="caption" style={{
                       fontWeight: selected ? '700' : '400',
                       color: selected ? c.onPrimary : c.inkTertiary,
-                    }}>
-                      {opt.label}
-                    </AppText>
+                    }}>{opt.label}</AppText>
                   </Pressable>
                 );
               })}

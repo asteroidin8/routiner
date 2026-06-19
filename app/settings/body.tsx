@@ -1,16 +1,16 @@
 import { useState } from 'react';
+import { Pressable, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 
+import { AppText } from '@/components/AppText';
 import { DecimalWheelPicker } from '@/components/settings/DecimalWheelPicker';
-import {
-  SettingChoiceRow,
-  SettingRow,
-  SettingSection,
-  SettingsScaffold,
-} from '@/components/settings';
+import { GroupCard, InsetDivider, PageHeader, Row } from '@/components/settings/MyScreenUI';
 import { WheelPicker } from '@/components/WheelPicker';
+import { radius, spacing } from '@/constants/spacing';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useUserStore } from '@/stores/useUserStore';
 import { formatMetric } from '@/utils/formatMetric';
-import type { SegmentOption } from '@/components/settings/SettingSegmentTrack';
 
 const AGE_VALUES = Array.from({ length: 83 }, (_, i) => i + 10);
 
@@ -22,29 +22,32 @@ const METRIC_LIMITS = {
   targetWeight: { min: 30, max: 180, defaultValue: 65, unit: 'kg', title: '목표 체중 선택' },
 } as const;
 
-type GenderSegment = 'male' | 'female' | 'none';
+type GenderValue = 'male' | 'female' | 'none';
 
-const GENDER_SEGMENTS: SegmentOption<GenderSegment>[] = [
+const GENDER_OPTIONS: { value: GenderValue; label: string }[] = [
   { value: 'male', label: '남성' },
   { value: 'female', label: '여성' },
   { value: 'none', label: '미설정' },
 ];
 
-function genderToSegment(isMale: boolean | null): GenderSegment {
+function genderToValue(isMale: boolean | null): GenderValue {
   if (isMale === true) return 'male';
   if (isMale === false) return 'female';
   return 'none';
 }
 
-function segmentToGender(value: GenderSegment | null): boolean | null {
+function valueToGender(value: GenderValue): boolean | null {
   if (value === 'male') return true;
   if (value === 'female') return false;
   return null;
 }
 
 export default function SettingsBodyScreen() {
+  const c = useThemeColors();
   const { profile, setHeight, setWeight, setTargetWeight, setAge, setIsMale } = useUserStore();
   const [pickerType, setPickerType] = useState<PickerType>(null);
+
+  const genderValue = genderToValue(profile.isMale);
 
   function getDecimalPickerProps() {
     switch (pickerType) {
@@ -53,10 +56,7 @@ export default function SettingsBodyScreen() {
       case 'weight':
         return { ...METRIC_LIMITS.weight, selected: profile.weightKg ?? METRIC_LIMITS.weight.defaultValue };
       case 'targetWeight':
-        return {
-          ...METRIC_LIMITS.targetWeight,
-          selected: profile.targetWeightKg ?? METRIC_LIMITS.targetWeight.defaultValue,
-        };
+        return { ...METRIC_LIMITS.targetWeight, selected: profile.targetWeightKg ?? METRIC_LIMITS.targetWeight.defaultValue };
       default:
         return { ...METRIC_LIMITS.height, selected: METRIC_LIMITS.height.defaultValue };
     }
@@ -64,15 +64,9 @@ export default function SettingsBodyScreen() {
 
   function handleDecimalConfirm(value: number) {
     switch (pickerType) {
-      case 'height':
-        setHeight(value);
-        break;
-      case 'weight':
-        setWeight(value);
-        break;
-      case 'targetWeight':
-        setTargetWeight(value);
-        break;
+      case 'height': setHeight(value); break;
+      case 'weight': setWeight(value); break;
+      case 'targetWeight': setTargetWeight(value); break;
     }
     setPickerType(null);
   }
@@ -84,46 +78,60 @@ export default function SettingsBodyScreen() {
 
   const decimalPicker = getDecimalPickerProps();
   const isAgePicker = pickerType === 'age';
-  const isDecimalPicker =
-    pickerType === 'height' || pickerType === 'weight' || pickerType === 'targetWeight';
+  const isDecimalPicker = pickerType === 'height' || pickerType === 'weight' || pickerType === 'targetWeight';
 
   return (
-    <SettingsScaffold title="신체 정보">
-      <SettingSection title="측정">
-        <SettingRow
-          label="키"
-          value={formatMetric(profile.heightCm, 'cm')}
-          unset={profile.heightCm == null}
-          onPress={() => setPickerType('height')}
-        />
-        <SettingRow
-          label="체중"
-          value={formatMetric(profile.weightKg, 'kg')}
-          unset={profile.weightKg == null}
-          onPress={() => setPickerType('weight')}
-        />
-        <SettingRow
-          label="목표 체중"
-          value={formatMetric(profile.targetWeightKg, 'kg')}
-          unset={profile.targetWeightKg == null}
-          onPress={() => setPickerType('targetWeight')}
-        />
-      </SettingSection>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
+      <PageHeader title="신체 정보" onBack={() => router.back()} />
 
-      <SettingSection title="기본 정보">
-        <SettingRow
-          label="나이"
-          value={profile.ageYears != null ? `${profile.ageYears}세` : '미설정'}
-          unset={profile.ageYears == null}
-          onPress={() => setPickerType('age')}
-        />
-        <SettingChoiceRow
-          label="성별"
-          options={GENDER_SEGMENTS}
-          value={genderToSegment(profile.isMale)}
-          onChange={(v) => setIsMale(segmentToGender(v ?? 'none'))}
-        />
-      </SettingSection>
+      <View style={{ padding: spacing.screen, gap: spacing.section }}>
+        <GroupCard>
+          <Row label="키" value={formatMetric(profile.heightCm, 'cm')} unset={profile.heightCm == null} onPress={() => setPickerType('height')} />
+          <InsetDivider />
+          <Row label="체중" value={formatMetric(profile.weightKg, 'kg')} unset={profile.weightKg == null} onPress={() => setPickerType('weight')} />
+          <InsetDivider />
+          <Row label="목표 체중" value={formatMetric(profile.targetWeightKg, 'kg')} unset={profile.targetWeightKg == null} onPress={() => setPickerType('targetWeight')} />
+        </GroupCard>
+
+        <GroupCard>
+          <Row
+            label="나이"
+            value={profile.ageYears != null ? `${profile.ageYears}세` : '미설정'}
+            unset={profile.ageYears == null}
+            onPress={() => setPickerType('age')}
+          />
+          <InsetDivider />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 48, paddingHorizontal: spacing.card }}>
+            <AppText variant="body">성별</AppText>
+            <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+              {GENDER_OPTIONS.map((opt) => {
+                const selected = genderValue === opt.value;
+                return (
+                  <Pressable
+                    key={opt.value}
+                    onPress={() => setIsMale(valueToGender(opt.value))}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    style={{
+                      paddingHorizontal: spacing.md,
+                      paddingVertical: spacing.xs + 2,
+                      borderRadius: radius.sm,
+                      backgroundColor: selected ? c.primary : 'transparent',
+                    }}
+                  >
+                    <AppText variant="caption" style={{
+                      fontWeight: selected ? '700' : '400',
+                      color: selected ? c.onPrimary : c.inkTertiary,
+                    }}>
+                      {opt.label}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </GroupCard>
+      </View>
 
       <DecimalWheelPicker
         visible={isDecimalPicker}
@@ -145,6 +153,6 @@ export default function SettingsBodyScreen() {
         onConfirm={handleAgeConfirm}
         onClose={() => setPickerType(null)}
       />
-    </SettingsScaffold>
+    </SafeAreaView>
   );
 }
