@@ -3,7 +3,6 @@ import { Pressable, TextInput, View } from 'react-native';
 
 import { AppText } from './AppText';
 import { DatePickerModal } from './DatePickerModal';
-import { HomePinHeaderButton } from './HomePinHeaderButton';
 import { SheetModal, SheetPrimaryButton } from './SheetModal';
 import { type TodoPriority } from '@/stores/useTodoStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -55,19 +54,17 @@ export function TodoModal({ visible, onSave, onClose }: Props) {
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<TodoPriority>('mid');
   const [dueDate, setDueDate] = useState<string | null>(null);
-  const [pinnedToHome, setPinnedToHome] = useState(false);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   function reset() {
     setTitle('');
     setPriority('mid');
     setDueDate(null);
-    setPinnedToHome(false);
   }
 
   function handleSave() {
     if (!title.trim()) return;
-    onSave({ title: title.trim(), priority, dueDate, pinnedToHome });
+    onSave({ title: title.trim(), priority, dueDate, pinnedToHome: false });
     reset();
   }
 
@@ -85,9 +82,6 @@ export function TodoModal({ visible, onSave, onClose }: Props) {
         visible={visible}
         onClose={handleClose}
         title="할 일 추가"
-        headerRight={
-          <HomePinHeaderButton pinned={pinnedToHome} onPress={() => setPinnedToHome((v) => !v)} />
-        }
         footer={<SheetPrimaryButton label="추가" onPress={handleSave} disabled={!canSave} />}
       >
         <TextInput
