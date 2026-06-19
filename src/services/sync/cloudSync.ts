@@ -160,6 +160,7 @@ export async function pullCloudToLocal(userId: string): Promise<{ error?: string
           order: t.sort_order,
           pinnedToHome: t.pinned_to_home,
           pinOrder: t.pin_order,
+          groupId: (t as Record<string, unknown>).group_id as string | null ?? null,
         }))
         .sort((a, b) => a.order - b.order),
     });

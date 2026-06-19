@@ -3,7 +3,6 @@ import { Pressable, TextInput, View } from 'react-native';
 
 import { AppText } from './AppText';
 import { DatePickerModal } from './DatePickerModal';
-import { HomePinHeaderButton } from './HomePinHeaderButton';
 import { SheetDangerButton, SheetModal, SheetPrimaryButton } from './SheetModal';
 import { type Todo, type TodoPriority } from '@/stores/useTodoStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -50,7 +49,6 @@ export function TodoEditModal({ visible, todo, onSave, onDelete, onClose }: Prop
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<TodoPriority>('mid');
   const [dueDate, setDueDate] = useState<string | null>(null);
-  const [pinnedToHome, setPinnedToHome] = useState(false);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   useEffect(() => {
@@ -58,14 +56,13 @@ export function TodoEditModal({ visible, todo, onSave, onDelete, onClose }: Prop
       setTitle(todo.title);
       setPriority(todo.priority);
       setDueDate(todo.dueDate);
-      setPinnedToHome(!!todo.pinnedToHome);
       setDatePickerVisible(false);
     }
   }, [todo]);
 
   function handleSave() {
     if (!title.trim()) return;
-    onSave({ title: title.trim(), priority, dueDate, pinnedToHome });
+    onSave({ title: title.trim(), priority, dueDate, pinnedToHome: false });
   }
 
   const today = todayStr();
@@ -77,9 +74,6 @@ export function TodoEditModal({ visible, todo, onSave, onDelete, onClose }: Prop
         visible={visible}
         onClose={onClose}
         title="할 일 편집"
-        headerRight={
-          <HomePinHeaderButton pinned={pinnedToHome} onPress={() => setPinnedToHome((v) => !v)} />
-        }
         footer={
           <>
             <SheetPrimaryButton label="저장" onPress={handleSave} disabled={!canSave} />

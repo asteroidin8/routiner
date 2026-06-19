@@ -62,6 +62,7 @@ export function useRealtimeSync() {
               order: Number(row.sort_order),
               pinnedToHome: Boolean(row.pinned_to_home),
               pinOrder: Number(row.pin_order),
+              groupId: (row.group_id as string | null) ?? null,
             });
             return { todos: next.sort((a, b) => a.order - b.order) };
           });
