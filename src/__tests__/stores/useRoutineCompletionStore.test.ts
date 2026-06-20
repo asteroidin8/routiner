@@ -1,4 +1,6 @@
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
+import type { Weekday } from '@/types';
+import { toDateStr } from '@/utils/homeDailyBoard';
 
 beforeEach(() => {
   useRoutineCompletionStore.setState({ completions: {} });
@@ -50,14 +52,26 @@ describe('useRoutineCompletionStore', () => {
       jest.setSystemTime(new Date('2026-06-20T12:00:00'));
 
       const state = useRoutineCompletionStore.getState();
-      // June 20 is Saturday (6) - not in repeatDays, so skip
-      // June 19 is Friday (5) - in repeatDays
-      state.toggleCompletion('r1', '2026-06-19');
-      // June 18 is Thursday (4) - not in repeatDays
-      // June 17 is Wednesday (3) - in repeatDays
-      state.toggleCompletion('r1', '2026-06-17');
+      const now = new Date();
+      const oneDayAgo = new Date(now);
+      oneDayAgo.setDate(now.getDate() - 1);
+      const threeDaysAgo = new Date(now);
+      threeDaysAgo.setDate(now.getDate() - 3);
 
-      const streak = useRoutineCompletionStore.getState().getStreak('r1', [3, 5]);
+      const asStoreDate = (d: Date) => {
+        const x = new Date(d);
+        x.setHours(0, 0, 0, 0);
+        return toDateStr(x);
+      };
+
+      state.toggleCompletion('r1', asStoreDate(oneDayAgo));
+      state.toggleCompletion('r1', asStoreDate(threeDaysAgo));
+
+      const repeatDays = Array.from(
+        new Set([oneDayAgo.getDay(), threeDaysAgo.getDay()]),
+      ) as Weekday[];
+
+      const streak = useRoutineCompletionStore.getState().getStreak('r1', repeatDays);
       expect(streak).toBe(2);
 
       jest.useRealTimers();
