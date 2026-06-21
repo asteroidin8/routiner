@@ -24,7 +24,7 @@ import { useTodoStore } from '@/stores/useTodoStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { buildMonthGrassMap } from '@/utils/calendarGrass';
 import { formatMetric } from '@/utils/formatMetric';
-import { type DailyFastingSummary, formatMinutes, groupFastingByDay } from '@/utils/statsHelper';
+import { type DailyFastingSummary, groupFastingByDay } from '@/utils/statsHelper';
 
 const TAB_INDEX = 3 as const;
 const L = STATS_LABELS;
@@ -33,38 +33,22 @@ function StatCard({
   icon,
   title,
   metric,
-  sub,
   onPress,
 }: {
   icon: string;
   title: string;
   metric: string;
-  sub: string;
   onPress: () => void;
 }) {
   const c = useThemeColors();
   return (
-    <Card pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-      <View
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 12,
-          backgroundColor: c.surfaceMuted,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <AppIcon name={icon as never} size={20} color={c.primary} />
+    <Card pressable onPress={onPress}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <AppIcon name={icon as never} size={18} color={c.primary} />
+        <AppText variant="body" style={{ flex: 1, fontWeight: '600' }}>{title}</AppText>
+        <AppText variant="body" style={{ fontWeight: '700' }}>{metric}</AppText>
+        <AppIcon name="ChevronRight" size={16} color={c.inkDisabled} />
       </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <AppText variant="caption" tone="tertiary">{title}</AppText>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-          <AppText variant="body" style={{ fontWeight: '700', fontSize: 18 }}>{metric}</AppText>
-          <AppText variant="caption" tone="secondary" numberOfLines={1} style={{ flexShrink: 1 }}>{sub}</AppText>
-        </View>
-      </View>
-      <AppIcon name="ChevronRight" size={16} color={c.inkDisabled} />
     </Card>
   );
 }
@@ -77,7 +61,7 @@ export default function StatsScreen() {
   const { records, removeRecord, updateRecord } = useFastingStore();
   const { routines } = useRoutineStore();
   const { todos } = useTodoStore();
-  const { getStreak, isCompleted } = useRoutineCompletionStore();
+  const { isCompleted } = useRoutineCompletionStore();
   const { profile } = useUserStore();
   const { cards } = useStatsCardStore();
 
@@ -98,20 +82,9 @@ export default function StatsScreen() {
   );
 
   const completedFasts = records.filter((r) => r.result === 'completed').length;
-  const finishedFasts = records.filter((r) => r.endedAt);
-  const avgFastMinutes =
-    finishedFasts.length > 0
-      ? Math.floor(
-          finishedFasts.reduce(
-            (acc, r) => acc + ((r.endedAt ?? r.startedAt) - r.startedAt) / 60_000,
-            0,
-          ) / finishedFasts.length,
-        )
-      : 0;
 
   const todayWeekday = now.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
   const todayRoutines = routines.filter((r) => r.repeatDays.includes(todayWeekday));
-  const maxStreak = routines.reduce((max, r) => Math.max(max, getStreak(r.id, r.repeatDays)), 0);
 
   const completedTodos = todos.filter((t) => t.completedAt !== null).length;
   const completionRate = todos.length > 0 ? Math.round((completedTodos / todos.length) * 100) : 0;
@@ -134,7 +107,6 @@ export default function StatsScreen() {
             icon="Timer"
             title={L.sectionFasting}
             metric={`${completedFasts}${L.timesUnit}`}
-            sub={avgFastMinutes > 0 ? `${L.avgDuration} ${formatMinutes(avgFastMinutes)}` : ''}
             onPress={() => router.push('/stats/fasting')}
           />
         );
@@ -145,7 +117,6 @@ export default function StatsScreen() {
             icon="RotateCcw"
             title={L.sectionRoutine}
             metric={`${todayRoutines.length}/${routines.length}${L.countUnit}`}
-            sub={maxStreak > 0 ? `${L.maxStreak} ${maxStreak}${L.dayUnit}` : ''}
             onPress={() => router.push('/stats/routine')}
           />
         );
@@ -156,7 +127,6 @@ export default function StatsScreen() {
             icon="ListTodo"
             title={L.sectionTodo}
             metric={`${completionRate}%`}
-            sub={`${completedTodos}/${todos.length} ${L.completed}`}
             onPress={() => router.push('/stats/todo')}
           />
         );

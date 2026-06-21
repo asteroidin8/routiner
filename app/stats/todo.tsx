@@ -58,31 +58,68 @@ export default function TodoDetailScreen() {
           <StatsSummaryCard label={L.completed} value={`${completedTodos}${L.countUnit}`} />
         </View>
 
+        {todos.length > 0 && (
+          <View style={{ gap: 8 }}>
+            <AppText variant="caption" tone="tertiary">
+              전체 달성률
+            </AppText>
+            <View style={{ height: 8, backgroundColor: c.surfaceMuted, borderRadius: 4, overflow: 'hidden' }}>
+              <View
+                style={{
+                  height: 8,
+                  width: `${completionRate}%`,
+                  backgroundColor: c.primary,
+                  borderRadius: 4,
+                }}
+              />
+            </View>
+          </View>
+        )}
+
         {todos.length > 0 ? (
           <View style={{ gap: 12 }}>
             <AppText variant="body" style={{ fontWeight: '700' }}>
               우선순위별
             </AppText>
-            {byPriority.map(({ priority, total, done }) => (
-              <Card key={priority} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: priorityColor(priority),
-                  }}
-                />
-                <View style={{ flex: 1 }}>
-                  <AppText variant="body" style={{ fontWeight: '600' }}>
-                    {priorityLabel[priority]}
-                  </AppText>
-                </View>
-                <AppText variant="caption" tone="secondary">
-                  {done}/{total}
-                </AppText>
-              </Card>
-            ))}
+            {byPriority.map(({ priority, total, done }) => {
+              const rate = total > 0 ? Math.round((done / total) * 100) : 0;
+              return (
+                <Card key={priority}>
+                  <View style={{ gap: 8 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: 4,
+                            backgroundColor: priorityColor(priority),
+                          }}
+                        />
+                        <AppText variant="body" style={{ fontWeight: '600' }}>
+                          {priorityLabel[priority]}
+                        </AppText>
+                      </View>
+                      <AppText variant="caption" tone="secondary">
+                        {done}/{total}
+                      </AppText>
+                    </View>
+                    {total > 0 && (
+                      <View style={{ height: 6, backgroundColor: c.surfaceMuted, borderRadius: 3, overflow: 'hidden' }}>
+                        <View
+                          style={{
+                            height: 6,
+                            width: `${rate}%`,
+                            backgroundColor: priorityColor(priority),
+                            borderRadius: 3,
+                          }}
+                        />
+                      </View>
+                    )}
+                  </View>
+                </Card>
+              );
+            })}
           </View>
         ) : (
           <View style={{ alignItems: 'center', paddingVertical: 40, gap: 8 }}>

@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
 } from 'react-native-reanimated';
 
@@ -68,6 +69,31 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
     width: `${progressWidth.value * 100}%`,
   }));
 
+  const routineBarWidth = useSharedValue(3);
+  const todoBarWidth = useSharedValue(3);
+
+  const routineBarStyle = useAnimatedStyle(() => ({
+    width: routineBarWidth.value,
+  }));
+
+  const todoBarStyle = useAnimatedStyle(() => ({
+    width: todoBarWidth.value,
+  }));
+
+  function pulseRoutineBar() {
+    routineBarWidth.value = withSequence(
+      withSpring(5, motion.spring.stiff),
+      withSpring(3, motion.spring.gentle),
+    );
+  }
+
+  function pulseTodoBar() {
+    todoBarWidth.value = withSequence(
+      withSpring(5, motion.spring.stiff),
+      withSpring(3, motion.spring.gentle),
+    );
+  }
+
   if (!hasRoutines && !hasTodos) return null;
 
   const cardStyle = {
@@ -106,11 +132,15 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
         <View
           style={{
             ...cardStyle,
-            borderLeftWidth: 3,
-            borderLeftColor: c.primary,
             ...(allRoutinesDone ? { borderColor: `${c.primary}30` } : {}),
           }}
         >
+          <Animated.View
+            style={[
+              { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: c.primary, zIndex: 1 },
+              routineBarStyle,
+            ]}
+          />
           <Pressable
             onPress={onRoutinePress}
             style={headerRowStyle}
@@ -118,7 +148,7 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
             accessibilityLabel="루틴 탭으로 이동"
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <AppIcon name="CheckSquare" size={size.iconSm} color={allRoutinesDone ? c.primary : c.inkTertiary} />
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.primary }} />
               <AppText
                 variant="body"
                 style={{
@@ -154,7 +184,10 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
                   <View style={itemRowStyle}>
                     <CompletionCheckbox
                       checked={false}
-                      onToggle={() => toggleCompletion(routine.id, today)}
+                      onToggle={() => {
+                        toggleCompletion(routine.id, today);
+                        pulseRoutineBar();
+                      }}
                       size={size.checkboxSm}
                       iconSize={10}
                       label={`${routine.name} 완료`}
@@ -191,13 +224,13 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
       )}
 
       {hasTodos && (
-        <View
-          style={{
-            ...cardStyle,
-            borderLeftWidth: 3,
-            borderLeftColor: c.primary,
-          }}
-        >
+        <View style={cardStyle}>
+          <Animated.View
+            style={[
+              { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: c.primary, zIndex: 1 },
+              todoBarStyle,
+            ]}
+          />
           <Pressable
             onPress={onTodoPress}
             style={headerRowStyle}
@@ -205,7 +238,7 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
             accessibilityLabel="할일 탭으로 이동"
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <AppIcon name="ListTodo" size={size.iconSm} color={c.inkTertiary} />
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.primary }} />
               <AppText variant="body" style={{ fontWeight: '600' }}>
                 오늘의 할 일
               </AppText>
@@ -225,7 +258,10 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
               <View style={itemRowStyle}>
                 <CompletionCheckbox
                   checked={false}
-                  onToggle={() => completeTodo(todo.id)}
+                  onToggle={() => {
+                    completeTodo(todo.id);
+                    pulseTodoBar();
+                  }}
                   size={size.checkboxSm}
                   iconSize={10}
                   shape="circle"

@@ -51,6 +51,7 @@ export function FastingCardCollapsed({
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel="단식, 도전하기"
+        style={{ borderStyle: 'dashed' }}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View style={{ gap: spacing.xs }}>
