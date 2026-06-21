@@ -11,6 +11,8 @@ import { Coachmark } from '@/components/Coachmark';
 import { Divider } from '@/components/Divider';
 import { EmptyState } from '@/components/EmptyState';
 import { FloatingAddButton } from '@/components/FloatingAddButton';
+import { SheetModal, SheetPrimaryButton } from '@/components/SheetModal';
+import { SpeedDialFab } from '@/components/SpeedDialFab';
 import { SwipeActions } from '@/components/SwipeActions';
 import { TodoEditModal } from '@/components/TodoEditModal';
 import { TodoItem } from '@/components/TodoItem';
@@ -72,38 +74,6 @@ function PrioritySectionHeader({ label, priority, count }: { label: string; prio
   );
 }
 
-function GrassBar({ completed, total }: { completed: number; total: number }) {
-  const c = useThemeColors();
-  if (total === 0) return null;
-
-  const cells = Array.from({ length: total }, (_, i) => i < completed);
-
-  return (
-    <View style={{ flexDirection: 'row', gap: 3, marginTop: spacing.xs }}>
-      {cells.map((filled, i) => (
-        <View
-          key={i}
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: 2,
-            backgroundColor: filled ? c.primary : c.surfaceMuted,
-            ...(filled
-              ? {
-                  shadowColor: c.neonGlow,
-                  shadowOpacity: 0.3,
-                  shadowRadius: 2,
-                  shadowOffset: { width: 0, height: 0 },
-                  elevation: 1,
-                }
-              : {}),
-          }}
-        />
-      ))}
-    </View>
-  );
-}
-
 function GroupHeader({
   group,
   completedCount,
@@ -138,32 +108,34 @@ function GroupHeader({
       accessibilityRole="button"
       accessibilityLabel={`${group.name} 그룹, ${completedCount}/${totalCount} 완료`}
       style={{
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingVertical: spacing.sm + 2,
         paddingHorizontal: spacing.screen,
         backgroundColor: c.surface,
-        gap: spacing.xs,
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-        <Animated.View style={chevronStyle}>
-          <AppIcon name="ChevronDown" size={14} color={allDone ? c.primary : c.inkTertiary} />
-        </Animated.View>
-        <AppText variant="body" style={{ fontWeight: '600', flex: 1, color: allDone ? c.primary : c.ink }}>
-          {group.name}
+      <Animated.View style={chevronStyle}>
+        <AppIcon name="ChevronDown" size={14} color={allDone ? c.primary : c.inkTertiary} />
+      </Animated.View>
+      <AppText variant="body" style={{ fontWeight: '600', flex: 1, marginLeft: spacing.sm, color: allDone ? c.primary : c.ink }}>
+        {group.name}
+      </AppText>
+      {allDone ? (
+        <AppText variant="caption" style={{ color: c.primary, fontWeight: '700', marginRight: spacing.sm }}>✓</AppText>
+      ) : (
+        <AppText variant="caption" tone="tertiary" style={{ marginRight: spacing.sm }}>
+          {completedCount}/{totalCount}
         </AppText>
-        {allDone ? (
-          <AppText variant="caption" style={{ color: c.primary, fontWeight: '700' }}>✓</AppText>
-        ) : (
-          <AppText variant="caption" tone="tertiary">
-            {completedCount}/{totalCount}
-          </AppText>
-        )}
-      </View>
-      {!group.collapsed && totalCount > 0 && (
-        <View style={{ paddingLeft: 22 }}>
-          <GrassBar completed={completedCount} total={totalCount} />
-        </View>
       )}
+      <Pressable
+        onPress={onDelete}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={`${group.name} 그룹 삭제`}
+      >
+        <AppIcon name="Trash2" size={14} color={c.inkDisabled} />
+      </Pressable>
     </Pressable>
   );
 }
@@ -194,8 +166,8 @@ export default function TodoScreen() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [editTarget, setEditTarget] = useState<Todo | null>(null);
   const [undoTarget, setUndoTarget] = useState<Todo | null>(null);
+  const [groupModalVisible, setGroupModalVisible] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
-  const [showGroupInput, setShowGroupInput] = useState(false);
 
   const activeTodos = todos.filter((t) => !t.completedAt);
   const completedTodos = todos.filter((t) => !!t.completedAt);
@@ -247,7 +219,7 @@ export default function TodoScreen() {
       collapsed: false,
     });
     setNewGroupName('');
-    setShowGroupInput(false);
+    setGroupModalVisible(false);
   }
 
   function handleRenameGroup(group: TodoGroup) {
@@ -423,36 +395,6 @@ export default function TodoScreen() {
             );
           })}
 
-          {/* 그룹 추가 버튼 */}
-          {showGroupInput ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.screen, paddingVertical: spacing.sm, gap: spacing.sm }}>
-              <TextInput
-                value={newGroupName}
-                onChangeText={setNewGroupName}
-                placeholder="그룹 이름"
-                placeholderTextColor={c.inkDisabled}
-                autoFocus
-                onSubmitEditing={handleCreateGroup}
-                returnKeyType="done"
-                style={{ flex: 1, fontSize: 15, color: c.ink, borderBottomWidth: 1, borderBottomColor: c.border, paddingVertical: spacing.xs }}
-              />
-              <Pressable onPress={handleCreateGroup} hitSlop={8}>
-                <AppText variant="caption" style={{ color: c.primary, fontWeight: '700' }}>추가</AppText>
-              </Pressable>
-              <Pressable onPress={() => { setShowGroupInput(false); setNewGroupName(''); }} hitSlop={8}>
-                <AppText variant="caption" tone="tertiary">취소</AppText>
-              </Pressable>
-            </View>
-          ) : (
-            <Pressable
-              onPress={() => setShowGroupInput(true)}
-              style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.screen, paddingVertical: spacing.sm + 2, gap: spacing.xs }}
-            >
-              <AppIcon name="FolderPlus" size={14} color={c.inkTertiary} />
-              <AppText variant="caption" tone="tertiary">그룹 추가</AppText>
-            </Pressable>
-          )}
-
           {/* 그룹 없는 할일 (우선순위별) */}
           {ungroupedActive.length > 0 && (
             <>
@@ -484,8 +426,38 @@ export default function TodoScreen() {
       )}
 
       {(hasTodos || groups.length > 0) && (
-        <FloatingAddButton onPress={() => setAddModalVisible(true)} accessibilityLabel="할일 추가" />
+        <SpeedDialFab
+          accessibilityLabel="추가 메뉴"
+          actions={[
+            { label: '할일 추가', icon: 'Plus', onPress: () => setAddModalVisible(true) },
+            { label: '그룹 추가', icon: 'FolderPlus', onPress: () => { setNewGroupName(''); setGroupModalVisible(true); } },
+          ]}
+        />
       )}
+
+      <SheetModal
+        visible={groupModalVisible}
+        onClose={() => setGroupModalVisible(false)}
+        title="그룹 추가"
+        footer={<SheetPrimaryButton label="추가" onPress={handleCreateGroup} disabled={!newGroupName.trim()} />}
+      >
+        <TextInput
+          value={newGroupName}
+          onChangeText={setNewGroupName}
+          placeholder="그룹 이름"
+          placeholderTextColor={c.inkDisabled}
+          autoFocus
+          returnKeyType="done"
+          onSubmitEditing={handleCreateGroup}
+          style={{
+            fontSize: 16,
+            color: c.ink,
+            borderBottomWidth: 1,
+            borderBottomColor: c.border,
+            paddingVertical: spacing.sm,
+          }}
+        />
+      </SheetModal>
 
       {modals}
     </SafeAreaView>
