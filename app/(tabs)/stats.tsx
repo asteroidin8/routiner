@@ -61,7 +61,7 @@ function StatCard({
         <AppText variant="caption" tone="tertiary">{title}</AppText>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
           <AppText variant="body" style={{ fontWeight: '700', fontSize: 18 }}>{metric}</AppText>
-          <AppText variant="caption" tone="secondary">{sub}</AppText>
+          <AppText variant="caption" tone="secondary" numberOfLines={1} style={{ flexShrink: 1 }}>{sub}</AppText>
         </View>
       </View>
       <AppIcon name="ChevronRight" size={16} color={c.inkDisabled} />
