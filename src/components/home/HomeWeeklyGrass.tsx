@@ -1,8 +1,10 @@
 import { View } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 
 import { AppText } from '@/components/AppText';
 import { SectionHeader } from '@/components/SectionHeader';
 import { HOME_COPY } from '@/constants/copy';
+import { motion } from '@/constants/motion';
 import { opacity, radius, spacing } from '@/constants/spacing';
 import { grassGlowShadow } from '@/constants/themeEffects';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -64,7 +66,7 @@ export function HomeWeeklyGrass() {
         }}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          {weekDots.map((dot) => {
+          {weekDots.map((dot, index) => {
             const isToday = dot.dateStr === todayStr;
             const colors = cellColor(dot.status, c);
             const cellSize = isToday ? CELL_SIZE_TODAY : CELL_SIZE;
@@ -78,8 +80,9 @@ export function HomeWeeklyGrass() {
                     ? '미완료'
                     : '기록 없음';
             return (
-              <View
+              <Animated.View
                 key={dot.dateStr}
+                entering={ZoomIn.delay(index * motion.stagger.list).duration(250).springify().damping(motion.spring.gentle.damping)}
                 style={{ flex: 1, alignItems: 'center', gap: CELL_GAP }}
                 accessibilityLabel={`${dot.weekdayLabel} ${statusA11y}`}
               >
@@ -103,7 +106,7 @@ export function HomeWeeklyGrass() {
                 >
                   {dot.weekdayLabel}
                 </AppText>
-              </View>
+              </Animated.View>
             );
           })}
         </View>

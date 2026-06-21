@@ -1,10 +1,19 @@
+import { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { AppIcon } from './AppIcon';
 import { AppText } from './AppText';
 import { CompletionCheckbox } from './CompletionCheckbox';
 import { TodoPriorityBadge } from './TodoPriorityBadge';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { motion } from '@/constants/motion';
 import { radius, size, spacing } from '@/constants/spacing';
 import { neonGlowShadow } from '@/constants/themeEffects';
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
@@ -50,6 +59,18 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
   const hasRoutines = todayRoutines.length > 0;
   const hasTodos = activeTodos.length > 0;
 
+  const completedCount = todayRoutines.length - incompleteRoutines.length;
+  const progressRatio = todayRoutines.length > 0 ? completedCount / todayRoutines.length : 0;
+  const progressWidth = useSharedValue(0);
+
+  useEffect(() => {
+    progressWidth.value = withDelay(200, withSpring(progressRatio, motion.spring.gentle));
+  }, [progressRatio, progressWidth]);
+
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value * 100}%`,
+  }));
+
   if (!hasRoutines && !hasTodos) return null;
 
   const cardStyle = {
@@ -76,7 +97,6 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
     gap: spacing.sm + 2,
   };
 
-  const completedCount = todayRoutines.length - incompleteRoutines.length;
   const displayRoutines = allRoutinesDone ? [] : incompleteRoutines.slice(0, MAX_ROUTINES);
   const hiddenRoutineCount = Math.max(incompleteRoutines.length - MAX_ROUTINES, 0);
 
@@ -86,7 +106,10 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
   return (
     <View style={{ gap: spacing.section }}>
       {hasRoutines && (
-        <View style={{ ...cardStyle, ...(allRoutinesDone ? neonGlowShadow(c, 'soft') : {}) }}>
+        <Animated.View
+          entering={FadeInDown.duration(280).springify().damping(motion.spring.gentle.damping)}
+          style={{ ...cardStyle, ...(allRoutinesDone ? neonGlowShadow(c, 'soft') : {}) }}
+        >
           <Pressable
             onPress={onRoutinePress}
             style={headerRowStyle}
@@ -113,9 +136,18 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
             </View>
           </Pressable>
 
+          <View style={{ height: 3, backgroundColor: c.surfaceMuted, marginHorizontal: spacing.card, borderRadius: 2 }}>
+            <Animated.View
+              style={[
+                { height: 3, backgroundColor: c.primary, borderRadius: 2 },
+                progressStyle,
+              ]}
+            />
+          </View>
+
           {displayRoutines.length > 0 && (
             <>
-              <View style={{ height: 1, backgroundColor: c.border }} />
+              <View style={{ height: 1, backgroundColor: c.border, marginTop: spacing.sm }} />
               {displayRoutines.map((routine, index) => (
                 <View key={routine.id}>
                   <View style={itemRowStyle}>
@@ -154,11 +186,14 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
               </AppText>
             </Pressable>
           )}
-        </View>
+        </Animated.View>
       )}
 
       {hasTodos && (
-        <View style={cardStyle}>
+        <Animated.View
+          entering={FadeInDown.delay(100).duration(280).springify().damping(motion.spring.gentle.damping)}
+          style={cardStyle}
+        >
           <Pressable
             onPress={onTodoPress}
             style={headerRowStyle}
@@ -219,7 +254,7 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
               </AppText>
             </Pressable>
           )}
-        </View>
+        </Animated.View>
       )}
     </View>
   );
