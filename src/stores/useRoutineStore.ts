@@ -11,6 +11,7 @@ type RoutineStore = {
   addRoutine: (routine: Routine) => void;
   updateRoutine: (id: string, updates: Partial<Routine>) => void;
   removeRoutine: (id: string) => void;
+  removeRoutines: (ids: string[]) => void;
   reorderRoutines: (ordered: Routine[]) => void;
 };
 
@@ -26,6 +27,8 @@ export const useRoutineStore = create<RoutineStore>()(
         })),
       removeRoutine: (id) =>
         set((s) => ({ routines: s.routines.filter((r) => r.id !== id) })),
+      removeRoutines: (ids) =>
+        set((s) => ({ routines: s.routines.filter((r) => !ids.includes(r.id)) })),
       reorderRoutines: (ordered) =>
         set({ routines: ordered.map((r, i) => ({ ...r, order: i })) }),
     }),
