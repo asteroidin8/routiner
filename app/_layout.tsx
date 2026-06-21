@@ -50,6 +50,7 @@ function AppContent() {
         <Stack.Screen name="onboarding" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
         <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
         <Stack.Screen name="auth/callback" options={{ headerShown: false, animation: 'fade' }} />
+        <Stack.Screen name="stats" />
         <Stack.Screen name="privacy" options={{ presentation: 'modal' }} />
         <Stack.Screen name="terms" options={{ presentation: 'modal' }} />
       </Stack>
