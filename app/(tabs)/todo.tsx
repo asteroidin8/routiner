@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, Pressable, ScrollView, TextInput, View } from 'react-native';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -35,6 +35,17 @@ const PRIORITY_SECTIONS: { key: TodoPriority; label: string }[] = [
   { key: 'mid', label: '보통' },
   { key: 'low', label: '낮음' },
 ];
+
+const PRIORITY_ORDER: Record<TodoPriority, number> = { high: 0, mid: 1, low: 2 };
+
+// ── Unified drag list types ──
+
+type ListItem =
+  | { type: 'group-header'; key: string; group: TodoGroup; completedCount: number; totalCount: number }
+  | { type: 'todo'; key: string; todo: Todo }
+  | { type: 'ungrouped-header'; key: string };
+
+// ── Small components ──
 
 function PriorityBadge({ priority }: { priority: TodoPriority }) {
   const c = useThemeColors();
@@ -110,9 +121,12 @@ function GroupHeader({
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: spacing.sm + 2,
-        paddingHorizontal: spacing.screen,
-        backgroundColor: c.surface,
+        paddingVertical: spacing.md,
+        paddingRight: spacing.screen,
+        paddingLeft: spacing.screen,
+        backgroundColor: c.surfaceSubtle,
+        borderLeftWidth: 3,
+        borderLeftColor: allDone ? c.primary : c.inkDisabled,
       }}
     >
       <Animated.View style={chevronStyle}>
@@ -140,6 +154,90 @@ function GroupHeader({
   );
 }
 
+function UngroupedHeader() {
+  const c = useThemeColors();
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: spacing.sm + 2,
+        paddingHorizontal: spacing.screen,
+        marginTop: spacing.sm,
+      }}
+    >
+      <AppIcon name="Inbox" size={14} color={c.inkDisabled} />
+      <AppText variant="caption" tone="disabled" style={{ marginLeft: spacing.xs, flex: 1 }}>
+        미분류
+      </AppText>
+    </View>
+  );
+}
+
+function EditBottomBar({
+  selectedCount,
+  totalCount,
+  onSelectAll,
+  onDelete,
+}: {
+  selectedCount: number;
+  totalCount: number;
+  onSelectAll: () => void;
+  onDelete: () => void;
+}) {
+  const c = useThemeColors();
+  const allSelected = selectedCount === totalCount && totalCount > 0;
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: spacing.screen,
+        paddingVertical: spacing.md,
+        paddingBottom: spacing.section,
+        backgroundColor: c.surfaceSubtle,
+        borderTopWidth: 1,
+        borderTopColor: c.border,
+      }}
+    >
+      <Pressable
+        onPress={onSelectAll}
+        hitSlop={8}
+        accessibilityRole="button"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
+      >
+        <AppIcon name={allSelected ? 'CheckSquare' : 'Square'} size={18} color={c.ink} />
+        <AppText variant="body">{allSelected ? '선택 해제' : '전체 선택'}</AppText>
+      </Pressable>
+
+      <AppText variant="caption" tone="tertiary">{selectedCount}개 선택됨</AppText>
+
+      <Pressable
+        onPress={onDelete}
+        disabled={selectedCount === 0}
+        hitSlop={8}
+        accessibilityRole="button"
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.xs,
+          opacity: selectedCount === 0 ? 0.4 : 1,
+        }}
+      >
+        <AppIcon name="Trash2" size={16} color={c.danger} />
+        <AppText variant="body" style={{ color: c.danger }}>삭제</AppText>
+      </Pressable>
+    </View>
+  );
+}
+
+// ── Main ──
+
 export default function TodoScreen() {
   const c = useThemeColors();
   const scrollRef = useRef<ScrollView>(null);
@@ -153,12 +251,13 @@ export default function TodoScreen() {
     completeTodo,
     uncompleteTodo,
     removeTodo,
+    removeTodos,
     reorderTodos,
     addGroup,
     updateGroup,
     removeGroup,
     toggleGroupCollapsed,
-    reorderGroupTodos,
+    batchUpdateTodos,
   } = useTodoStore();
   const { seenHints, markHintSeen } = useSettingsStore();
 
@@ -168,6 +267,8 @@ export default function TodoScreen() {
   const [undoTarget, setUndoTarget] = useState<Todo | null>(null);
   const [groupModalVisible, setGroupModalVisible] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const activeTodos = todos.filter((t) => !t.completedAt);
   const completedTodos = todos.filter((t) => !!t.completedAt);
@@ -175,6 +276,100 @@ export default function TodoScreen() {
 
   const sortedGroups = [...groups].sort((a, b) => a.order - b.order);
   const ungroupedActive = activeTodos.filter((t) => !t.groupId);
+  const hasGroups = groups.length > 0;
+
+  function enterEditMode() {
+    setEditMode(true);
+    setSelectedIds(new Set());
+  }
+
+  function exitEditMode() {
+    setEditMode(false);
+    setSelectedIds(new Set());
+  }
+
+  function toggleSelection(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const visibleTodoIds = useMemo(() => {
+    const list = filter === 'active' ? activeTodos : completedTodos;
+    return list.map((t) => t.id);
+  }, [filter, activeTodos, completedTodos]);
+
+  function handleSelectAll() {
+    if (selectedIds.size === visibleTodoIds.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(visibleTodoIds));
+    }
+  }
+
+  function handleBulkDelete() {
+    const count = selectedIds.size;
+    if (count === 0) return;
+    Alert.alert(
+      `${count}개 삭제`,
+      `선택한 ${count}개의 할일을 삭제할까요?`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => {
+            removeTodos(Array.from(selectedIds));
+            exitEditMode();
+          },
+        },
+      ],
+    );
+  }
+
+  // ── Build unified drag list (when groups exist) ──
+
+  const dragItems = useMemo<ListItem[]>(() => {
+    if (!hasGroups) return [];
+    const items: ListItem[] = [];
+
+    for (const group of sortedGroups) {
+      const groupActive = activeTodos
+        .filter((t) => t.groupId === group.id)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      const groupCompleted = todos.filter((t) => t.groupId === group.id && !!t.completedAt);
+      items.push({
+        type: 'group-header',
+        key: `gh-${group.id}`,
+        group,
+        completedCount: groupCompleted.length,
+        totalCount: groupActive.length + groupCompleted.length,
+      });
+      if (!group.collapsed) {
+        for (const todo of groupActive) {
+          items.push({ type: 'todo', key: todo.id, todo });
+        }
+      }
+    }
+
+    if (ungroupedActive.length > 0) {
+      items.push({ type: 'ungrouped-header', key: 'ungrouped-header' });
+      const sorted = [...ungroupedActive].sort((a, b) => {
+        if (a.priority !== b.priority) return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+        return (a.order ?? 0) - (b.order ?? 0);
+      });
+      for (const todo of sorted) {
+        items.push({ type: 'todo', key: todo.id, todo });
+      }
+    }
+
+    return items;
+  }, [hasGroups, sortedGroups, activeTodos, todos, ungroupedActive]);
+
+  // ── Handlers ──
 
   function handleAdd({ title, priority, dueDate, pinnedToHome, groupId }: TodoCreatePayload) {
     const samePriorityCount = todos.filter((t) => t.priority === priority && !t.completedAt).length;
@@ -249,7 +444,125 @@ export default function TodoScreen() {
     );
   }
 
-  function renderTodoItem({ item, drag }: RenderItemParams<Todo>) {
+  function handleUnifiedDragEnd({ data }: { data: ListItem[] }) {
+    let currentGroupId: string | null = null;
+    let order = 0;
+    const updates: { id: string; groupId: string | null; order: number }[] = [];
+
+    for (const item of data) {
+      if (item.type === 'group-header') {
+        currentGroupId = item.group.id;
+        order = 0;
+      } else if (item.type === 'ungrouped-header') {
+        currentGroupId = null;
+        order = 0;
+      } else {
+        updates.push({ id: item.todo.id, groupId: currentGroupId, order });
+        order++;
+      }
+    }
+
+    runAfterDragAnimation(() => batchUpdateTodos(updates));
+  }
+
+  // ── Render items ──
+
+  function renderUnifiedItem({ item, drag }: RenderItemParams<ListItem>) {
+      if (item.type === 'group-header') {
+        return (
+          <GroupHeader
+            group={item.group}
+            completedCount={item.completedCount}
+            totalCount={item.totalCount}
+            onToggleCollapse={() => toggleGroupCollapsed(item.group.id)}
+            onRename={() => handleRenameGroup(item.group)}
+            onDelete={() => handleDeleteGroup(item.group)}
+          />
+        );
+      }
+
+      if (item.type === 'ungrouped-header') {
+        return <UngroupedHeader />;
+      }
+
+      const todo = item.todo;
+      const isGrouped = !!todo.groupId;
+
+      if (editMode) {
+        const selected = selectedIds.has(todo.id);
+        return (
+          <Pressable
+            onPress={() => toggleSelection(todo.id)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: spacing.md,
+              paddingHorizontal: spacing.screen,
+              paddingLeft: isGrouped ? spacing.screen + spacing.card : spacing.screen,
+              gap: spacing.item,
+              backgroundColor: selected ? `${c.primary}15` : 'transparent',
+            }}
+          >
+            <AppIcon
+              name={selected ? 'CheckSquare' : 'Square'}
+              size={20}
+              color={selected ? c.primary : c.inkDisabled}
+            />
+            <AppText variant="body" style={{ flex: 1 }}>{todo.title}</AppText>
+          </Pressable>
+        );
+      }
+
+      return (
+        <ScaleDecorator activeScale={1.02}>
+          <SwipeActions
+            onDelete={() => {
+              setUndoTarget(todo);
+              removeTodo(todo.id);
+            }}
+            onComplete={() => completeTodo(todo.id)}
+          >
+            <View style={{ paddingLeft: isGrouped ? spacing.card : 0 }}>
+              <View style={{ paddingHorizontal: spacing.screen }}>
+                <TodoItem
+                  todo={todo}
+                  onToggle={() => completeTodo(todo.id)}
+                  onLongPress={drag}
+                  onPress={() => setEditTarget(todo)}
+                />
+              </View>
+              <Divider />
+            </View>
+          </SwipeActions>
+        </ScaleDecorator>
+      );
+  }
+
+  function renderLegacyTodoItem({ item, drag }: RenderItemParams<Todo>) {
+    if (editMode) {
+      const selected = selectedIds.has(item.id);
+      return (
+        <Pressable
+          onPress={() => toggleSelection(item.id)}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: spacing.md,
+            paddingHorizontal: spacing.screen,
+            gap: spacing.item,
+            backgroundColor: selected ? `${c.primary}15` : 'transparent',
+          }}
+        >
+          <AppIcon
+            name={selected ? 'CheckSquare' : 'Square'}
+            size={20}
+            color={selected ? c.primary : c.inkDisabled}
+          />
+          <AppText variant="body" style={{ flex: 1 }}>{item.title}</AppText>
+        </Pressable>
+      );
+    }
+
     return (
       <ScaleDecorator activeScale={1.02}>
         <SwipeActions
@@ -290,7 +603,7 @@ export default function TodoScreen() {
         onDismiss={() => setUndoTarget(null)}
       />
       <Coachmark
-        visible={showSwipeHint && filter === 'active'}
+        visible={showSwipeHint && filter === 'active' && !editMode}
         message="← 삭제 · 완료 → 스와이프 · 길게 눌러 편집"
         onDismiss={() => {
           markHintSeen('swipeActions');
@@ -300,13 +613,58 @@ export default function TodoScreen() {
     </>
   );
 
+  // ── Completed tab ──
+
   if (filter === 'completed') {
     const showFab = completedTodos.length > 0;
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
-        <Header filter={filter} setFilter={setFilter} activeTodos={activeTodos} completedTodos={completedTodos} />
+        <Header
+          filter={filter}
+          setFilter={setFilter}
+          activeTodos={activeTodos}
+          completedTodos={completedTodos}
+          editMode={editMode}
+          onToggleEdit={editMode ? exitEditMode : enterEditMode}
+        />
         {completedTodos.length === 0 ? (
           <EmptyState message="아직 완료한 일이 없어요" variant="todo" />
+        ) : editMode ? (
+          <FlatList
+            data={completedTodos}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item: todo }) => {
+              const selected = selectedIds.has(todo.id);
+              return (
+                <Pressable
+                  onPress={() => toggleSelection(todo.id)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingVertical: spacing.md,
+                    paddingHorizontal: spacing.screen,
+                    gap: spacing.item,
+                    backgroundColor: selected ? `${c.primary}15` : 'transparent',
+                  }}
+                >
+                  <AppIcon
+                    name={selected ? 'CheckSquare' : 'Square'}
+                    size={20}
+                    color={selected ? c.primary : c.inkDisabled}
+                  />
+                  <AppText
+                    variant="body"
+                    tone="tertiary"
+                    style={{ flex: 1, textDecorationLine: 'line-through' }}
+                  >
+                    {todo.title}
+                  </AppText>
+                </Pressable>
+              );
+            }}
+          />
         ) : (
           <FlatList
             data={completedTodos}
@@ -329,17 +687,35 @@ export default function TodoScreen() {
             )}
           />
         )}
-        {showFab && <FloatingAddButton onPress={() => setAddModalVisible(true)} accessibilityLabel="할일 추가" />}
+        {editMode ? (
+          <EditBottomBar
+            selectedCount={selectedIds.size}
+            totalCount={completedTodos.length}
+            onSelectAll={handleSelectAll}
+            onDelete={handleBulkDelete}
+          />
+        ) : (
+          showFab && <FloatingAddButton onPress={() => setAddModalVisible(true)} accessibilityLabel="할일 추가" />
+        )}
         {modals}
       </SafeAreaView>
     );
   }
 
+  // ── Active tab ──
+
   const hasTodos = activeTodos.length > 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
-      <Header filter={filter} setFilter={setFilter} activeTodos={activeTodos} completedTodos={completedTodos} />
+      <Header
+        filter={filter}
+        setFilter={setFilter}
+        activeTodos={activeTodos}
+        completedTodos={completedTodos}
+        editMode={editMode}
+        onToggleEdit={editMode ? exitEditMode : enterEditMode}
+      />
 
       {!hasTodos && groups.length === 0 ? (
         <EmptyState
@@ -348,91 +724,66 @@ export default function TodoScreen() {
           onAction={() => setAddModalVisible(true)}
           variant="todo"
         />
+      ) : hasGroups ? (
+        /* ── Unified DnD list (groups exist) ── */
+        <DraggableFlatList
+          data={dragItems}
+          keyExtractor={(item) => item.key}
+          onDragEnd={handleUnifiedDragEnd}
+          renderItem={renderUnifiedItem}
+          activationDistance={4}
+          contentContainerStyle={{ paddingBottom: editMode ? 100 : 100 }}
+          showsVerticalScrollIndicator={false}
+        />
       ) : (
+        /* ── Legacy priority-sectioned layout (no groups) ── */
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100 }}
         >
-          {/* 그룹 섹션 */}
-          {sortedGroups.map((group) => {
-            const groupTodos = activeTodos
-              .filter((t) => t.groupId === group.id)
-              .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-            const groupCompleted = todos.filter((t) => t.groupId === group.id && !!t.completedAt);
-
-            return (
-              <View key={group.id}>
-                <GroupHeader
-                  group={group}
-                  completedCount={groupCompleted.length}
-                  totalCount={groupTodos.length + groupCompleted.length}
-                  onToggleCollapse={() => toggleGroupCollapsed(group.id)}
-                  onRename={() => handleRenameGroup(group)}
-                  onDelete={() => handleDeleteGroup(group)}
-                />
-                {!group.collapsed && groupTodos.length > 0 && (
+          {ungroupedActive.length > 0 &&
+            PRIORITY_SECTIONS.map(({ key, label }) => {
+              const items = ungroupedActive
+                .filter((t) => t.priority === key)
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+              if (items.length === 0) return null;
+              return (
+                <View key={key}>
+                  <PrioritySectionHeader label={label} priority={key} count={items.length} />
                   <View style={{ paddingHorizontal: spacing.screen }}>
                     <DraggableFlatList
-                      data={groupTodos}
+                      data={items}
                       keyExtractor={(item) => item.id}
-                      onDragEnd={({ data }) =>
-                        runAfterDragAnimation(() => reorderGroupTodos(group.id, data))
-                      }
-                      renderItem={renderTodoItem}
+                      onDragEnd={({ data }) => runAfterDragAnimation(() => reorderTodos(key, data))}
+                      renderItem={renderLegacyTodoItem}
                       scrollEnabled={false}
                       activationDistance={4}
                     />
                   </View>
-                )}
-                {!group.collapsed && groupTodos.length === 0 && groupCompleted.length === 0 && (
-                  <View style={{ paddingHorizontal: spacing.screen, paddingVertical: spacing.sm }}>
-                    <AppText variant="caption" tone="disabled">비어 있음</AppText>
-                  </View>
-                )}
-                <Divider />
-              </View>
-            );
-          })}
-
-          {/* 그룹 없는 할일 (우선순위별) */}
-          {ungroupedActive.length > 0 && (
-            <>
-              {groups.length > 0 && <View style={{ height: spacing.sm }} />}
-              {PRIORITY_SECTIONS.map(({ key, label }) => {
-                const items = ungroupedActive
-                  .filter((t) => t.priority === key)
-                  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-                if (items.length === 0) return null;
-                return (
-                  <View key={key}>
-                    <PrioritySectionHeader label={label} priority={key} count={items.length} />
-                    <View style={{ paddingHorizontal: spacing.screen }}>
-                      <DraggableFlatList
-                        data={items}
-                        keyExtractor={(item) => item.id}
-                        onDragEnd={({ data }) => runAfterDragAnimation(() => reorderTodos(key, data))}
-                        renderItem={renderTodoItem}
-                        scrollEnabled={false}
-                        activationDistance={4}
-                      />
-                    </View>
-                  </View>
-                );
-              })}
-            </>
-          )}
+                </View>
+              );
+            })}
         </ScrollView>
       )}
 
-      {(hasTodos || groups.length > 0) && (
-        <SpeedDialFab
-          accessibilityLabel="추가 메뉴"
-          actions={[
-            { label: '할일 추가', icon: 'Plus', onPress: () => setAddModalVisible(true) },
-            { label: '그룹 추가', icon: 'FolderPlus', onPress: () => { setNewGroupName(''); setGroupModalVisible(true); } },
-          ]}
+      {editMode ? (
+        <EditBottomBar
+          selectedCount={selectedIds.size}
+          totalCount={activeTodos.length}
+          onSelectAll={handleSelectAll}
+          onDelete={handleBulkDelete}
         />
+      ) : (
+        (hasTodos || groups.length > 0) && (
+          <SpeedDialFab
+            accessibilityLabel="추가 메뉴"
+            actions={[
+              { label: '할일 추가', icon: 'Plus', onPress: () => setAddModalVisible(true) },
+              { label: '그룹 추가', icon: 'FolderPlus', onPress: () => { setNewGroupName(''); setGroupModalVisible(true); } },
+            ]}
+          />
+        )
       )}
 
       <SheetModal
@@ -464,16 +815,22 @@ export default function TodoScreen() {
   );
 }
 
+// ── Header ──
+
 function Header({
   filter,
   setFilter,
   activeTodos,
   completedTodos,
+  editMode,
+  onToggleEdit,
 }: {
   filter: TabFilter;
   setFilter: (f: TabFilter) => void;
   activeTodos: Todo[];
   completedTodos: Todo[];
+  editMode: boolean;
+  onToggleEdit: () => void;
 }) {
   const c = useThemeColors();
   return (
@@ -489,35 +846,41 @@ function Header({
         }}
       >
         <AppText variant="title">할일</AppText>
+        <Pressable onPress={onToggleEdit} hitSlop={8} accessibilityRole="button">
+          <AppText variant="body" tone={editMode ? 'primary' : 'tertiary'} style={{ fontWeight: '600' }}>
+            {editMode ? '완료' : '편집'}
+          </AppText>
+        </Pressable>
       </View>
-      <View style={{ flexDirection: 'row', paddingHorizontal: spacing.screen, gap: spacing.card, marginBottom: spacing.xs }}>
-        {(['active', 'completed'] as TabFilter[]).map((tab) => {
-          const isActive = filter === tab;
-          return (
-            <Pressable
-              key={tab}
-              onPress={() => setFilter(tab)}
-              hitSlop={8}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: isActive }}
-            >
-              <AppText
-                variant="caption"
-                tone={isActive ? 'primary' : 'tertiary'}
-                style={
-                  isActive
-                    ? { fontWeight: '700', borderBottomWidth: 1.5, borderBottomColor: c.ink, paddingBottom: 2 }
-                    : {}
-                }
+      {!editMode && (
+        <View style={{ flexDirection: 'row', paddingHorizontal: spacing.screen, gap: spacing.card, marginBottom: spacing.xs }}>
+          {(['active', 'completed'] as TabFilter[]).map((tab) => {
+            const isActive = filter === tab;
+            return (
+              <Pressable
+                key={tab}
+                onPress={() => setFilter(tab)}
+                hitSlop={8}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isActive }}
               >
-                {tab === 'active' ? `진행 중 ${activeTodos.length}` : `완료 ${completedTodos.length}`}
-              </AppText>
-            </Pressable>
-          );
-        })}
-      </View>
+                <AppText
+                  variant="caption"
+                  tone={isActive ? 'primary' : 'tertiary'}
+                  style={
+                    isActive
+                      ? { fontWeight: '700', borderBottomWidth: 1.5, borderBottomColor: c.ink, paddingBottom: 2 }
+                      : {}
+                  }
+                >
+                  {tab === 'active' ? `진행 중 ${activeTodos.length}` : `완료 ${completedTodos.length}`}
+                </AppText>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
       <Divider />
     </>
   );
 }
-

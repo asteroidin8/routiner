@@ -30,6 +30,8 @@ type TodoStore = {
   toggleGroupCollapsed: (id: string) => void;
   moveTodoToGroup: (todoId: string, groupId: string | null) => void;
   reorderGroupTodos: (groupId: string, ordered: Todo[]) => void;
+  batchUpdateTodos: (updates: { id: string; groupId: string | null; order: number }[]) => void;
+  removeTodos: (ids: string[]) => void;
 };
 
 export const useTodoStore = create<TodoStore>()(
@@ -131,6 +133,19 @@ export const useTodoStore = create<TodoStore>()(
             ...s.todos.filter((t) => t.groupId !== groupId),
             ...ordered.map((t, i) => ({ ...t, order: i })),
           ],
+        })),
+
+      batchUpdateTodos: (updates) =>
+        set((s) => ({
+          todos: s.todos.map((t) => {
+            const u = updates.find((up) => up.id === t.id);
+            return u ? { ...t, groupId: u.groupId, order: u.order } : t;
+          }),
+        })),
+
+      removeTodos: (ids) =>
+        set((s) => ({
+          todos: s.todos.filter((t) => !ids.includes(t.id)),
         })),
     }),
     {
