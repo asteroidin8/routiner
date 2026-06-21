@@ -1,7 +1,9 @@
 import { Dimensions, Pressable, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { AppText } from '@/components/AppText';
 import { DAY_LABELS } from '@/constants/statsLabels';
+import { motion } from '@/constants/motion';
 import { spacing } from '@/constants/spacing';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { grassCellColors, type DailyGrassActivity } from '@/utils/calendarGrass';
@@ -52,6 +54,8 @@ export function StatsMonthGrid({ year, month, summaries, grassMap, onSelect }: P
           const grass = grassMap.get(date);
           const level = grass?.level ?? 0;
           const colors = grassCellColors(level, c, isToday, hasFasting);
+          const dayIndex = new Date(`${date}T00:00:00`).getDate() - 1;
+          const staggerDelay = Math.min(dayIndex * 12, motion.stagger.maxDelay);
           const a11yParts = [
             `${new Date(`${date}T00:00:00`).getDate()}일`,
             grass && grass.routineTotal > 0
@@ -64,8 +68,8 @@ export function StatsMonthGrid({ year, month, summaries, grassMap, onSelect }: P
             .join(', ');
 
           return (
+            <Animated.View key={`${year}-${month}-${date}`} entering={FadeIn.delay(staggerDelay).duration(200)}>
             <Pressable
-              key={date}
               onPress={() => summary && onSelect(summary)}
               accessibilityRole="button"
               accessibilityLabel={a11yParts}
@@ -114,6 +118,7 @@ export function StatsMonthGrid({ year, month, summaries, grassMap, onSelect }: P
                 {new Date(`${date}T00:00:00`).getDate()}
               </AppText>
             </Pressable>
+            </Animated.View>
           );
         })}
       </View>
