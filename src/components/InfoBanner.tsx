@@ -30,22 +30,36 @@ function bannerStyle(c: ReturnType<typeof useThemeColors>): ViewStyle {
   };
 }
 
-function BannerContent({ title, description, icon = 'UserCircle' }: Pick<Props, 'title' | 'description' | 'icon'>) {
+function BannerContent({ title, description, icon = 'UserCircle', showChevron }: Pick<Props, 'title' | 'description' | 'icon'> & { showChevron?: boolean }) {
   const c = useThemeColors();
 
   return (
     <>
-      <AppIcon name={icon} size={18} color={c.inkTertiary} />
-      <View style={{ flex: 1, gap: spacing.xs, justifyContent: 'center' }}>
-        <AppText variant="caption" tone="secondary" style={{ fontWeight: '600' }}>
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: c.surfaceMuted,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <AppIcon name={icon} size={18} color={c.inkTertiary} />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <AppText variant="caption" tone="secondary" style={{ fontWeight: '600' }} numberOfLines={2}>
           {title}
         </AppText>
         {description ? (
-          <AppText variant="caption" tone="tertiary" style={{ lineHeight: 17 }}>
+          <AppText variant="caption" tone="tertiary" numberOfLines={1}>
             {description}
           </AppText>
         ) : null}
       </View>
+      {showChevron && (
+        <AppIcon name="ChevronRight" size={16} color={c.inkDisabled} />
+      )}
     </>
   );
 }
@@ -62,7 +76,7 @@ export function InfoBanner({ title, description, icon, onPress, style, accessibi
         accessibilityLabel={accessibilityLabel ?? title}
         style={({ pressed }) => [baseStyle, { opacity: pressed ? 0.88 : 1 }, style]}
       >
-        <BannerContent title={title} description={description} icon={icon} />
+        <BannerContent title={title} description={description} icon={icon} showChevron />
       </Pressable>
     );
   }
