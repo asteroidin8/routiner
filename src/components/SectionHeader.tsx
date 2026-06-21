@@ -36,7 +36,7 @@ export function SectionHeader({ title, variant = 'bar', spacingTop }: Props) {
       style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}
       accessibilityRole="header"
     >
-      <View style={{ width: 3, height: 14, backgroundColor: c.primary, borderRadius: 2 }} />
+      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.primary }} />
       <AppText variant="body" style={{ fontWeight: '700' }}>
         {title}
       </AppText>
