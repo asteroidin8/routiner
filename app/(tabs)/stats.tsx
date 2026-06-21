@@ -1,23 +1,19 @@
 import { useRef, useState } from 'react';
-import { Alert, Dimensions, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 
 import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
-import { BarChart, type BarChartItem } from '@/components/BarChart';
 import { Card } from '@/components/Card';
 import { EmptyIllustration } from '@/components/EmptyIllustration';
 import { FastingRecordEditModal } from '@/components/FastingRecordEditModal';
-import { SectionHeader } from '@/components/SectionHeader';
-import { StatsSummarySkeleton } from '@/components/Skeleton';
 import { StatsBentoStats } from '@/components/stats/StatsBentoStats';
 import { StatsDayDetailModal } from '@/components/stats/StatsDayDetailModal';
 import { StatsMonthGrid } from '@/components/stats/StatsMonthGrid';
-import { StatsSummaryCard } from '@/components/stats/StatsSummaryCard';
-import { STATS_LABELS, WEEKDAY_SHORT } from '@/constants/statsLabels';
+import { STATS_LABELS } from '@/constants/statsLabels';
 import { spacing } from '@/constants/spacing';
 import { useTabScrollToTop } from '@/contexts/TabNavigationContext';
-import { useAppHydrated } from '@/hooks/useAppHydrated';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { FastingRecord } from '@/types';
 import { useFastingStore } from '@/stores/useFastingStore';
@@ -27,16 +23,53 @@ import { useTodoStore } from '@/stores/useTodoStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { buildMonthGrassMap } from '@/utils/calendarGrass';
 import { formatMetric } from '@/utils/formatMetric';
-import { toDateStr } from '@/utils/homeDailyBoard';
 import { type DailyFastingSummary, formatMinutes, groupFastingByDay } from '@/utils/statsHelper';
 
 const TAB_INDEX = 3 as const;
 const L = STATS_LABELS;
-const SCREEN_WIDTH = Dimensions.get('window').width;
+
+function StatCard({
+  icon,
+  title,
+  metric,
+  sub,
+  onPress,
+}: {
+  icon: string;
+  title: string;
+  metric: string;
+  sub: string;
+  onPress: () => void;
+}) {
+  const c = useThemeColors();
+  return (
+    <Card pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          backgroundColor: c.surfaceMuted,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <AppIcon name={icon as never} size={20} color={c.primary} />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <AppText variant="caption" tone="tertiary">{title}</AppText>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+          <AppText variant="body" style={{ fontWeight: '700', fontSize: 18 }}>{metric}</AppText>
+          <AppText variant="caption" tone="secondary">{sub}</AppText>
+        </View>
+      </View>
+      <AppIcon name="ChevronRight" size={16} color={c.inkDisabled} />
+    </Card>
+  );
+}
 
 export default function StatsScreen() {
   const c = useThemeColors();
-  const hydrated = useAppHydrated();
   const scrollRef = useRef<ScrollView>(null);
   useTabScrollToTop(TAB_INDEX, scrollRef);
 
@@ -79,31 +112,8 @@ export default function StatsScreen() {
   const maxStreak = routines.reduce((max, r) => Math.max(max, getStreak(r.id, r.repeatDays)), 0);
 
   const completedTodos = todos.filter((t) => t.completedAt !== null).length;
-  const totalHighPriority = todos.filter((t) => t.priority === 'high').length;
-  const completedHighPriority = todos.filter((t) => t.priority === 'high' && !!t.completedAt).length;
   const completionRate = todos.length > 0 ? Math.round((completedTodos / todos.length) * 100) : 0;
 
-  const todayDateStr = toDateStr(new Date());
-  const last7Days: BarChartItem[] = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const ds = d.toISOString().slice(0, 10);
-    const dayRecords = records.filter(
-      (r) => new Date(r.startedAt).toISOString().slice(0, 10) === ds,
-    );
-    const totalHours = Math.round(
-      dayRecords.reduce(
-        (acc, r) => acc + ((r.endedAt ?? r.startedAt) - r.startedAt) / 3_600_000,
-        0,
-      ),
-    );
-    return {
-      label: WEEKDAY_SHORT[d.getDay()],
-      value: totalHours,
-      isToday: ds === todayDateStr,
-    };
-  });
-  const hasChartData = last7Days.some((d) => d.value > 0);
   const isDataEmpty = records.length === 0 && routines.length === 0 && todos.length === 0;
 
   function prevMonth() {
@@ -203,28 +213,39 @@ export default function StatsScreen() {
               />
             </View>
 
-            <View style={{ gap: 12 }}>
-              <SectionHeader title={L.sectionFasting} />
-              {!hydrated ? (
-                <StatsSummarySkeleton />
-              ) : (
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <StatsSummaryCard label={L.totalRecords} value={`${records.length}${L.timesUnit}`} />
-                  <StatsSummaryCard label={L.completed} value={`${completedFasts}${L.timesUnit}`} />
-                  <StatsSummaryCard label={L.avgDuration} value={formatMinutes(avgFastMinutes)} />
-                </View>
-              )}
-            </View>
+            <View style={{ gap: spacing.md }}>
+              <StatCard
+                icon="Timer"
+                title={L.sectionFasting}
+                metric={`${completedFasts}${L.timesUnit}`}
+                sub={avgFastMinutes > 0 ? `${L.avgDuration} ${formatMinutes(avgFastMinutes)}` : ''}
+                onPress={() => router.push('/stats/fasting')}
+              />
 
-            {profile.weightKg != null && profile.targetWeightKg != null && (
-              <View style={{ gap: spacing.sm }}>
-                <SectionHeader title={L.sectionWeightGoal} />
-                <Card>
+              <StatCard
+                icon="RotateCcw"
+                title={L.sectionRoutine}
+                metric={`${todayRoutines.length}/${routines.length}${L.countUnit}`}
+                sub={maxStreak > 0 ? `${L.maxStreak} ${maxStreak}${L.dayUnit}` : ''}
+                onPress={() => router.push('/stats/routine')}
+              />
+
+              <StatCard
+                icon="ListTodo"
+                title={L.sectionTodo}
+                metric={`${completionRate}%`}
+                sub={`${completedTodos}/${todos.length} ${L.completed}`}
+                onPress={() => router.push('/stats/todo')}
+              />
+
+              {profile.weightKg != null && profile.targetWeightKg != null && (
+                <Card style={{ gap: spacing.xs }}>
+                  <AppText variant="caption" tone="tertiary">{L.sectionWeightGoal}</AppText>
                   <AppText variant="body" style={{ fontWeight: '600' }}>
                     {formatMetric(profile.weightKg, 'kg')} {L.weightArrow}{' '}
                     {formatMetric(profile.targetWeightKg, 'kg')}
                   </AppText>
-                  <AppText variant="caption" tone="tertiary" style={{ marginTop: spacing.xs }}>
+                  <AppText variant="caption" tone="tertiary">
                     {profile.weightKg > profile.targetWeightKg
                       ? `${(profile.weightKg - profile.targetWeightKg).toFixed(1)}kg ${L.weightToLose}`
                       : profile.weightKg < profile.targetWeightKg
@@ -232,46 +253,6 @@ export default function StatsScreen() {
                         : L.weightAtGoal}
                   </AppText>
                 </Card>
-              </View>
-            )}
-
-            {hydrated && hasChartData && (
-              <View style={{ gap: 8 }}>
-                <AppText variant="caption" tone="tertiary">
-                  {L.chartTitle}
-                </AppText>
-                <BarChart data={last7Days} width={SCREEN_WIDTH - 40} height={130} unit="h" />
-              </View>
-            )}
-
-            <View style={{ gap: 12 }}>
-              <SectionHeader title={L.sectionRoutine} />
-              {!hydrated ? (
-                <StatsSummarySkeleton />
-              ) : (
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <StatsSummaryCard label={L.totalRoutines} value={`${routines.length}${L.countUnit}`} />
-                  <StatsSummaryCard label={L.todayRoutines} value={`${todayRoutines.length}${L.countUnit}`} />
-                  <StatsSummaryCard
-                    label={L.maxStreak}
-                    value={maxStreak > 0 ? `${maxStreak}${L.dayUnit}` : '-'}
-                  />
-                </View>
-              )}
-            </View>
-
-            <View style={{ gap: 12 }}>
-              <SectionHeader title={L.sectionTodo} />
-              {!hydrated ? (
-                <StatsSummarySkeleton />
-              ) : (
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <StatsSummaryCard label={L.completionRate} value={`${completionRate}%`} />
-                  <StatsSummaryCard
-                    label={L.importantTodos}
-                    value={totalHighPriority > 0 ? `${completedHighPriority}/${totalHighPriority}` : '-'}
-                  />
-                </View>
               )}
             </View>
           </>
@@ -293,7 +274,12 @@ export default function StatsScreen() {
         visible={editingRecord !== null}
         record={editingRecord}
         onSave={(updates) => {
-          if (editingRecord) updateRecord(editingRecord.id, { result: updates.result, startedAt: updates.startedAt, ...(updates.endedAt != null ? { endedAt: updates.endedAt } : {}) });
+          if (editingRecord)
+            updateRecord(editingRecord.id, {
+              result: updates.result,
+              startedAt: updates.startedAt,
+              ...(updates.endedAt != null ? { endedAt: updates.endedAt } : {}),
+            });
           setEditingRecord(null);
         }}
         onDelete={() => {
