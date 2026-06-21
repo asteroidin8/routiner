@@ -18,10 +18,7 @@ type Props = {
 export function InfoBanner({ title, icon = 'UserCircle', onPress, style, accessibilityLabel }: Props) {
   const c = useThemeColors();
 
-  const baseStyle: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+  const wrapStyle: ViewStyle = {
     backgroundColor: c.surfaceSubtle,
     borderRadius: radius.xl,
     borderWidth: 1,
@@ -30,14 +27,14 @@ export function InfoBanner({ title, icon = 'UserCircle', onPress, style, accessi
     paddingVertical: spacing.md,
   };
 
-  const content = (
-    <>
+  const row = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
       <AppIcon name={icon} size={18} color={c.inkTertiary} />
       <AppText variant="caption" tone="secondary" style={{ flex: 1, fontWeight: '600' }} numberOfLines={1}>
         {title}
       </AppText>
       {onPress && <AppIcon name="ChevronRight" size={16} color={c.inkDisabled} />}
-    </>
+    </View>
   );
 
   if (onPress) {
@@ -46,12 +43,12 @@ export function InfoBanner({ title, icon = 'UserCircle', onPress, style, accessi
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel ?? title}
-        style={({ pressed }) => [baseStyle, { opacity: pressed ? 0.88 : 1 }, style]}
+        style={({ pressed }) => [wrapStyle, { opacity: pressed ? 0.88 : 1 }, style]}
       >
-        {content}
+        {row}
       </Pressable>
     );
   }
 
-  return <View style={[baseStyle, style]}>{content}</View>;
+  return <View style={[wrapStyle, style]}>{row}</View>;
 }
