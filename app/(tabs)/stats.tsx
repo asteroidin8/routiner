@@ -135,20 +135,13 @@ export default function StatsScreen() {
       case 'weight':
         if (!hasWeight) return null;
         return (
-          <Card key="weight" style={{ gap: spacing.xs }}>
-            <AppText variant="caption" tone="tertiary">{L.sectionWeightGoal}</AppText>
-            <AppText variant="body" style={{ fontWeight: '600' }}>
-              {formatMetric(profile.weightKg!, 'kg')} {L.weightArrow}{' '}
-              {formatMetric(profile.targetWeightKg!, 'kg')}
-            </AppText>
-            <AppText variant="caption" tone="tertiary">
-              {profile.weightKg! > profile.targetWeightKg!
-                ? `${(profile.weightKg! - profile.targetWeightKg!).toFixed(1)}kg ${L.weightToLose}`
-                : profile.weightKg! < profile.targetWeightKg!
-                  ? `${(profile.targetWeightKg! - profile.weightKg!).toFixed(1)}kg ${L.weightToGain}`
-                  : L.weightAtGoal}
-            </AppText>
-          </Card>
+          <StatCard
+            key="weight"
+            icon="Scale"
+            title={L.sectionWeightGoal}
+            metric={`${formatMetric(profile.weightKg!, 'kg')} ${L.weightArrow} ${formatMetric(profile.targetWeightKg!, 'kg')}`}
+            onPress={() => router.push('/stats/weight')}
+          />
         );
     }
   }
