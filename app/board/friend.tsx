@@ -1,0 +1,212 @@
+import { useEffect, useMemo } from 'react';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
+
+import { AppIcon } from '@/components/AppIcon';
+import { AppText } from '@/components/AppText';
+import { Card } from '@/components/Card';
+import { PageHeader } from '@/components/settings/MyScreenUI';
+import { spacing } from '@/constants/spacing';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import { useFollowStore } from '@/stores/useFollowStore';
+import {
+  fetchFriendProgress,
+  unfollowUser,
+} from '@/services/social/followService';
+import { localDateStr } from '@/utils/dateFormat';
+
+const WEEKDAY_SHORT = ['일', '월', '화', '수', '목', '금', '토'];
+
+function getWeekDates(): string[] {
+  const dates: string[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    dates.push(localDateStr(d));
+  }
+  return dates;
+}
+
+function getMonthDates(): string[] {
+  const today = new Date();
+  const dates: string[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    dates.push(localDateStr(d));
+  }
+  return dates;
+}
+
+function ratioToLevel(ratio: number): number {
+  if (ratio >= 1) return 4;
+  if (ratio >= 0.75) return 3;
+  if (ratio >= 0.5) return 2;
+  if (ratio > 0) return 1;
+  return 0;
+}
+
+export default function FriendProfileScreen() {
+  const c = useThemeColors();
+  const { userId, nickname } = useLocalSearchParams<{ userId: string; nickname: string }>();
+  const progress = useFollowStore((s) => s.friendProgress[userId ?? ''] ?? []);
+
+  useEffect(() => {
+    if (userId) void fetchFriendProgress(userId);
+  }, [userId]);
+
+  const weekDates = useMemo(() => getWeekDates(), []);
+  const monthDates = useMemo(() => getMonthDates(), []);
+  const todayStr = localDateStr();
+
+  const todayEntry = progress.find((p) => p.date === todayStr);
+  const todayTotal = (todayEntry?.routineTotal ?? 0) + (todayEntry?.todoTotal ?? 0);
+  const todayCompleted = (todayEntry?.routineCompleted ?? 0) + (todayEntry?.todoCompleted ?? 0);
+  const todayRate = todayTotal > 0 ? Math.round((todayCompleted / todayTotal) * 100) : 0;
+  const streak = todayEntry?.streak ?? 0;
+
+  const weekGrass = useMemo(
+    () =>
+      weekDates.map((date) => {
+        const entry = progress.find((p) => p.date === date);
+        if (!entry) return 0;
+        const total = entry.routineTotal + entry.todoTotal;
+        if (total === 0) return 0;
+        return ratioToLevel((entry.routineCompleted + entry.todoCompleted) / total);
+      }),
+    [weekDates, progress],
+  );
+
+  const monthGrass = useMemo(
+    () =>
+      monthDates.map((date) => {
+        const entry = progress.find((p) => p.date === date);
+        if (!entry) return 0;
+        const total = entry.routineTotal + entry.todoTotal;
+        if (total === 0) return 0;
+        return ratioToLevel((entry.routineCompleted + entry.todoCompleted) / total);
+      }),
+    [monthDates, progress],
+  );
+
+  const grassOpacity = [0, 0.2, 0.4, 0.65, 1];
+
+  function handleUnfollow() {
+    Alert.alert('팔로우 취소', `${nickname}님을 언팔로우할까요?`, [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '언팔로우',
+        style: 'destructive',
+        onPress: async () => {
+          if (!userId) return;
+          await unfollowUser(userId);
+          useFollowStore.getState().removeFollowing(userId);
+          router.back();
+        },
+      },
+    ]);
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: spacing.screen }}>
+        <PageHeader title={nickname ?? ''} onBack={() => router.back()} />
+        <Pressable onPress={handleUnfollow} hitSlop={8} style={{ padding: 4 }}>
+          <AppIcon name="UserMinus" size={18} color={c.danger} />
+        </Pressable>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={{ padding: spacing.screen, gap: spacing.section }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Today summary */}
+        <Card style={{ alignItems: 'center', gap: spacing.xs }}>
+          <AppText variant="caption" tone="tertiary">오늘 달성률</AppText>
+          <AppText variant="title" style={{ fontSize: 32, fontWeight: '700', color: c.primary }}>
+            {todayRate}%
+          </AppText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <AppIcon name="Flame" size={14} color={c.accent} />
+            <AppText variant="caption" style={{ fontWeight: '600', color: c.accent }}>
+              {streak}일 연속
+            </AppText>
+          </View>
+        </Card>
+
+        {/* Weekly grass */}
+        <View style={{ gap: spacing.xs }}>
+          <AppText variant="caption" tone="tertiary" style={{ fontWeight: '600' }}>
+            주간 잔디
+          </AppText>
+          <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'center' }}>
+            {weekDates.map((date, i) => {
+              const d = new Date(`${date}T00:00:00`);
+              const level = weekGrass[i];
+              return (
+                <View key={date} style={{ alignItems: 'center', gap: 4 }}>
+                  <AppText variant="caption" tone="disabled" style={{ fontSize: 9 }}>
+                    {WEEKDAY_SHORT[d.getDay()]}
+                  </AppText>
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 8,
+                      backgroundColor: level === 0 ? c.surfaceMuted : c.primary,
+                      opacity: level === 0 ? 1 : grassOpacity[level],
+                      borderWidth: level === 0 ? 1 : 0,
+                      borderColor: c.border,
+                    }}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Monthly grass grid */}
+        <View style={{ gap: spacing.xs }}>
+          <AppText variant="caption" tone="tertiary" style={{ fontWeight: '600' }}>
+            최근 30일
+          </AppText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+            {monthGrass.map((level, i) => (
+              <View
+                key={i}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 6,
+                  backgroundColor: level === 0 ? c.surfaceMuted : c.primary,
+                  opacity: level === 0 ? 1 : grassOpacity[level],
+                  borderWidth: level === 0 ? 1 : 0,
+                  borderColor: c.border,
+                }}
+              />
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, justifyContent: 'flex-end', marginTop: 4 }}>
+            <AppText variant="caption" tone="disabled" style={{ fontSize: 9 }}>적음</AppText>
+            {[0, 1, 2, 3, 4].map((level) => (
+              <View
+                key={level}
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 3,
+                  backgroundColor: level === 0 ? c.surfaceMuted : c.primary,
+                  opacity: level === 0 ? 1 : grassOpacity[level],
+                  borderWidth: level === 0 ? 1 : 0,
+                  borderColor: c.border,
+                }}
+              />
+            ))}
+            <AppText variant="caption" tone="disabled" style={{ fontSize: 9 }}>많음</AppText>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
