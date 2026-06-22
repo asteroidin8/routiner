@@ -119,13 +119,18 @@ async function uploadPhoto(
 
   const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg';
   const fileName = `${userId}/${boardId}/${Date.now()}.${ext}`;
+  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
 
-  const response = await fetch(uri);
-  const blob = await response.blob();
+  const formData = new FormData();
+  formData.append('', {
+    uri,
+    name: fileName.replace(/\//g, '_'),
+    type: contentType,
+  } as unknown as Blob);
 
   const { error } = await supabase.storage
     .from('board-photos')
-    .upload(fileName, blob, { contentType: `image/${ext === 'png' ? 'png' : 'jpeg'}` });
+    .upload(fileName, formData, { contentType: 'multipart/form-data' });
   if (error) return { error: error.message };
 
   return { path: fileName };
