@@ -10,6 +10,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 import { CloudSyncBridge } from '@/components/CloudSyncBridge';
 import { AuthProvider } from '@/contexts/AuthProvider';
+import { useBoardProgressSync } from '@/hooks/useBoardProgressSync';
+import { useBoardRealtimeSync } from '@/hooks/useBoardRealtimeSync';
 import { useFastingNotification } from '@/hooks/useFastingNotification';
 import { useMidnightArchive } from '@/hooks/useMidnightArchive';
 import { useRoutineNotifications } from '@/hooks/useRoutineNotifications';
@@ -38,6 +40,8 @@ function AppContent() {
     setupNotificationHandler();
   }, []);
 
+  useBoardRealtimeSync();
+  useBoardProgressSync();
   useFastingNotification();
   useMidnightArchive();
   useRoutineNotifications();
@@ -53,6 +57,7 @@ function AppContent() {
         <Stack.Screen name="onboarding" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
         <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
         <Stack.Screen name="auth/callback" options={{ headerShown: false, animation: 'fade' }} />
+        <Stack.Screen name="board" />
         <Stack.Screen name="stats" />
         <Stack.Screen name="privacy" options={{ presentation: 'modal' }} />
         <Stack.Screen name="terms" options={{ presentation: 'modal' }} />

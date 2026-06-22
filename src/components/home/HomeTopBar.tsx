@@ -66,9 +66,20 @@ export function HomeTopBar() {
           position: 'absolute',
           right: 0,
           height: '100%',
-          justifyContent: 'center',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.sm,
         }}
       >
+        <Pressable
+          onPress={() => router.push('/board')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="보드"
+          style={{ padding: spacing.xs }}
+        >
+          <AppIcon name="Users" size={20} color={c.inkTertiary} />
+        </Pressable>
         <Pressable
           onPress={() => router.push('/settings')}
           hitSlop={12}
