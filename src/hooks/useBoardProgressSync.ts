@@ -1,0 +1,59 @@
+import { useEffect, useRef } from 'react';
+
+import { useAuth } from '@/contexts/AuthProvider';
+import { useBoardStore } from '@/stores/useBoardStore';
+import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
+import { useRoutineStore } from '@/stores/useRoutineStore';
+import { useTodoStore } from '@/stores/useTodoStore';
+import { pushDailyProgress } from '@/services/board/boardService';
+import { isRoutineScheduledForDate } from '@/utils/routineSchedule';
+
+export function useBoardProgressSync() {
+  const { user } = useAuth();
+  const boards = useBoardStore((s) => s.boards);
+  const routines = useRoutineStore((s) => s.routines);
+  const todos = useTodoStore((s) => s.todos);
+  const { isCompleted } = useRoutineCompletionStore();
+  const lastPushed = useRef('');
+
+  useEffect(() => {
+    if (!user?.id || boards.length === 0) return;
+
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+
+    const todayRoutines = routines.filter((r) => isRoutineScheduledForDate(r, now));
+    const routineCompleted = todayRoutines.filter((r) => isCompleted(r.id, todayStr)).length;
+    const routineTotal = todayRoutines.length;
+
+    const activeTodos = todos.filter((t) => !t.archivedDate);
+    const todoCompleted = activeTodos.filter((t) => t.completedAt !== null).length;
+    const todoTotal = activeTodos.length;
+
+    let streak = 0;
+    for (let i = 0; i < 365; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const ds = d.toISOString().slice(0, 10);
+      const dayRoutines = routines.filter((r) => isRoutineScheduledForDate(r, d));
+      if (dayRoutines.length === 0) continue;
+      const allDone = dayRoutines.every((r) => isCompleted(r.id, ds));
+      if (allDone) streak++;
+      else break;
+    }
+
+    const key = `${todayStr}:${routineCompleted}/${routineTotal}:${todoCompleted}/${todoTotal}:${streak}`;
+    if (key === lastPushed.current) return;
+    lastPushed.current = key;
+
+    for (const board of boards) {
+      void pushDailyProgress(user.id, board.id, todayStr, {
+        routineCompleted,
+        routineTotal,
+        todoCompleted,
+        todoTotal,
+        streak,
+      });
+    }
+  }, [user?.id, boards, routines, todos, isCompleted]);
+}
