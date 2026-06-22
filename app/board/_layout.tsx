@@ -7,6 +7,8 @@ export default function BoardLayout() {
       <Stack.Screen name="[id]" />
       <Stack.Screen name="create" options={{ presentation: 'modal' }} />
       <Stack.Screen name="join" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="search" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="friend" />
     </Stack>
   );
 }
