@@ -5,6 +5,7 @@ import type { Weekday } from '@/stores/useRoutineStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { useTodoStore } from '@/stores/useTodoStore';
 import { useUserStore } from '@/stores/useUserStore';
+import { withCloudSyncSuppressed } from '@/services/sync/cloudSyncGuard';
 
 export async function checkNicknameTaken(nickname: string, _currentUserId: string): Promise<boolean> {
   const supabase = getSupabase();
@@ -16,6 +17,7 @@ export async function checkNicknameTaken(nickname: string, _currentUserId: strin
 
 /** 로컬 Zustand → Supabase upsert (클라우드 백업) */
 export async function pushLocalToCloud(userId: string): Promise<{ error?: string }> {
+  return withCloudSyncSuppressed(async () => {
   const supabase = getSupabase();
   if (!supabase) return { error: 'Supabase 미설정' };
 
@@ -126,10 +128,12 @@ export async function pushLocalToCloud(userId: string): Promise<{ error?: string
   });
 
   return {};
+  });
 }
 
 /** Supabase → 로컸 pull (최초 로그인·복원) */
 export async function pullCloudToLocal(userId: string): Promise<{ error?: string }> {
+  return withCloudSyncSuppressed(async () => {
   const supabase = getSupabase();
   if (!supabase) return { error: 'Supabase 미설정' };
 
@@ -236,4 +240,5 @@ export async function pullCloudToLocal(userId: string): Promise<{ error?: string
   }
 
   return {};
+  });
 }
