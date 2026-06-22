@@ -5,13 +5,12 @@ import { AppText } from './AppText';
 import { SheetDangerButton, SheetModal, SheetPrimaryButton } from './SheetModal';
 import { TimePickerModal } from './TimePickerModal';
 import { radius, spacing } from '@/constants/spacing';
+import { DAY_LABELS } from '@/constants/statsLabels';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { RepeatType, Routine, Weekday } from '@/types';
 import { formatTimeDisplay } from '@/utils/dateFormat';
-
-const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 const ALL_DAYS: Weekday[] = [0, 1, 2, 3, 4, 5, 6];
 const PRESET_OPTIONS: { type: RepeatType; label: string }[] = [
   { type: 'daily', label: '매일' },

@@ -1,6 +1,5 @@
+import { DAY_LABELS } from '@/constants/statsLabels';
 import type { Routine, Weekday } from '@/types';
-
-const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export function isRoutineScheduledForDate(routine: Routine, date: Date): boolean {
   const type = routine.repeatType ?? 'weekly';

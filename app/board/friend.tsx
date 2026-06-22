@@ -7,8 +7,9 @@ import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { PageHeader } from '@/components/settings/MyScreenUI';
-import { getGrassColor, getCellBorderRadius } from '@/constants/grassTheme';
+import { getGrassColor, getCellBorderRadius, GRASS_OPACITY } from '@/constants/grassTheme';
 import { spacing } from '@/constants/spacing';
+import { WEEKDAY_SHORT } from '@/constants/statsLabels';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { EMPTY_FRIEND_PROGRESS, useFollowStore } from '@/stores/useFollowStore';
@@ -16,38 +17,8 @@ import {
   fetchFriendProgress,
   unfollowUser,
 } from '@/services/social/followService';
+import { getWeekDates, getMonthDates, ratioToLevel } from '@/utils/boardHelpers';
 import { localDateStr } from '@/utils/dateFormat';
-
-const WEEKDAY_SHORT = ['일', '월', '화', '수', '목', '금', '토'];
-
-function getWeekDates(): string[] {
-  const dates: string[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    dates.push(localDateStr(d));
-  }
-  return dates;
-}
-
-function getMonthDates(): string[] {
-  const today = new Date();
-  const dates: string[] = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(today.getDate() - i);
-    dates.push(localDateStr(d));
-  }
-  return dates;
-}
-
-function ratioToLevel(ratio: number): number {
-  if (ratio >= 1) return 4;
-  if (ratio >= 0.75) return 3;
-  if (ratio >= 0.5) return 2;
-  if (ratio > 0) return 1;
-  return 0;
-}
 
 export default function FriendProfileScreen() {
   const c = useThemeColors();
@@ -92,9 +63,9 @@ export default function FriendProfileScreen() {
     [monthDates, progress],
   );
 
-  const grassHex = getGrassColor(useSettingsStore.getState().grassColor);
-  const grassCellShape = useSettingsStore.getState().grassShape;
-  const grassOpacity = [0, 0.2, 0.4, 0.65, 1];
+  const grassHex = getGrassColor(useSettingsStore((s) => s.grassColor));
+  const grassCellShape = useSettingsStore((s) => s.grassShape);
+  const grassOpacity = GRASS_OPACITY;
 
   function handleUnfollow() {
     Alert.alert('팔로우 취소', `${nickname}님을 언팔로우할까요?`, [

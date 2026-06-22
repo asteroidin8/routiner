@@ -17,8 +17,9 @@ import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { SheetModal, SheetPrimaryButton } from '@/components/SheetModal';
 import { PageHeader } from '@/components/settings/MyScreenUI';
-import { getGrassColor, getCellBorderRadius } from '@/constants/grassTheme';
+import { getGrassColor, getCellBorderRadius, GRASS_OPACITY } from '@/constants/grassTheme';
 import { radius, spacing } from '@/constants/spacing';
+import { WEEKDAY_SHORT } from '@/constants/statsLabels';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import {
@@ -41,20 +42,10 @@ import {
   deleteVerification,
 } from '@/services/board/boardRoutineService';
 import type { BoardVerificationLog } from '@/types';
+import { getWeekDates, ratioToLevel } from '@/utils/boardHelpers';
 import { localDateStr } from '@/utils/dateFormat';
 
-const WEEKDAY_SHORT = ['일', '월', '화', '수', '목', '금', '토'];
 type Tab = 'members' | 'routines' | 'feed';
-
-function getWeekDates(): string[] {
-  const dates: string[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    dates.push(localDateStr(d));
-  }
-  return dates;
-}
 
 function formatLogTime(iso: string): string {
   const d = new Date(iso);
@@ -115,13 +106,7 @@ export default function BoardDetailScreen() {
         if (!entry) return 0;
         const total = entry.routineTotal + entry.todoTotal;
         if (total === 0) return 0;
-        const completed = entry.routineCompleted + entry.todoCompleted;
-        const ratio = completed / total;
-        if (ratio >= 1) return 4;
-        if (ratio >= 0.75) return 3;
-        if (ratio >= 0.5) return 2;
-        if (ratio > 0) return 1;
-        return 0;
+        return ratioToLevel((entry.routineCompleted + entry.todoCompleted) / total);
       });
 
       return { member, rate, streak, weekGrass };
@@ -204,13 +189,16 @@ export default function BoardDetailScreen() {
   async function handleSubmitVerification() {
     if (!user?.id || !id || !selectedRoutineId || !photoUri) return;
     setSubmitting(true);
-    const { error } = await submitVerification(id, selectedRoutineId, user.id, photoUri, memo || null);
-    setSubmitting(false);
-    if (error) {
-      Alert.alert('오류', error);
-      return;
+    try {
+      const { error } = await submitVerification(id, selectedRoutineId, user.id, photoUri, memo || null);
+      if (error) {
+        Alert.alert('오류', error);
+        return;
+      }
+      setShowVerify(false);
+    } finally {
+      setSubmitting(false);
     }
-    setShowVerify(false);
   }
 
   function handleDeleteLog(log: BoardVerificationLog) {
@@ -226,7 +214,7 @@ export default function BoardDetailScreen() {
   }
 
   const grassHex = getGrassColor(grassColor);
-  const grassOpacity = [0, 0.2, 0.4, 0.65, 1];
+  const grassOpacity = GRASS_OPACITY;
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'members', label: '멤버' },
