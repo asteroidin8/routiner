@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import { useAuth } from '@/contexts/AuthProvider';
 import { getSupabase } from '@/lib/supabase';
+import { isCloudSyncSuppressed } from '@/services/sync/cloudSyncGuard';
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
 import { useRoutineStore, type Weekday } from '@/stores/useRoutineStore';
 import { useTodoStore } from '@/stores/useTodoStore';
@@ -21,6 +22,7 @@ export function useRealtimeSync() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'routines', filter: `user_id=eq.${user.id}` },
         (payload) => {
+          if (isCloudSyncSuppressed()) return;
           const row = payload.new as Record<string, unknown> | undefined;
           if (!row || payload.eventType === 'DELETE') return;
           useRoutineStore.setState((state) => {
@@ -45,6 +47,7 @@ export function useRealtimeSync() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'todos', filter: `user_id=eq.${user.id}` },
         (payload) => {
+          if (isCloudSyncSuppressed()) return;
           const row = payload.new as Record<string, unknown> | undefined;
           if (!row) return;
           if (payload.eventType === 'DELETE') {
@@ -81,6 +84,7 @@ export function useRealtimeSync() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
+          if (isCloudSyncSuppressed()) return;
           if (payload.eventType === 'DELETE') {
             const key = (payload.old as { completion_key: string }).completion_key;
             useRoutineCompletionStore.setState((s) => {
