@@ -35,8 +35,8 @@ export function useRoutineNotifications() {
           await Notifications.scheduleNotificationAsync({
             identifier: `${NOTIFICATION_ID.routinePrefix}${routine.id}-daily`,
             content: {
-              title: '루틴 알림',
-              body: routine.name,
+              title: '🌱 잔디 심을 시간',
+              body: `${routine.name} — 연속 기록 이어가기`,
               data: { routineId: routine.id },
             },
             trigger: {
