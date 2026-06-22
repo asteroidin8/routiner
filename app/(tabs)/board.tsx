@@ -53,7 +53,7 @@ export default function BoardTabScreen() {
     }
   }, [tab, following]);
 
-  const weekDates = useMemo(getWeekDates, []);
+  const weekDates = useMemo(() => getWeekDates(), []);
   const todayStr = localDateStr();
   const grassHex = getGrassColor(useSettingsStore((s) => s.grassColor));
   const grassCellShape = useSettingsStore((s) => s.grassShape);
