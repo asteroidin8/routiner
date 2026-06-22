@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 
 import { useAuth } from '@/contexts/AuthProvider';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { isCloudSyncSuppressed } from '@/services/sync/cloudSyncGuard';
 import { pushLocalToCloud, pullCloudToLocal } from '@/services/sync/cloudSync';
 import { useFastingStore } from '@/stores/useFastingStore';
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
@@ -17,9 +18,17 @@ export function useAutoCloudSync() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialPullUserRef = useRef<string | null>(null);
 
-  if (__DEV__) {
-    console.log('[zndi:sync] configured:', configured, 'supabase:', isSupabaseConfigured(), 'user:', user?.id ?? 'null');
-  }
+  useEffect(() => {
+    if (!__DEV__) return;
+    console.log(
+      '[zndi:sync] configured:',
+      configured,
+      'supabase:',
+      isSupabaseConfigured(),
+      'user:',
+      user?.id ?? 'null',
+    );
+  }, [configured, user?.id]);
 
   useEffect(() => {
     const userId = user?.id;
@@ -48,6 +57,7 @@ export function useAutoCloudSync() {
     }
 
     const schedulePush = () => {
+      if (isCloudSyncSuppressed()) return;
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         pushLocalToCloud(userId).then((res) => {
