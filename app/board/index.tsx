@@ -8,8 +8,9 @@ import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { PageHeader } from '@/components/settings/MyScreenUI';
-import { getGrassColor, getCellBorderRadius } from '@/constants/grassTheme';
+import { getGrassColor, getCellBorderRadius, GRASS_OPACITY } from '@/constants/grassTheme';
 import { radius, spacing } from '@/constants/spacing';
+import { WEEKDAY_SHORT } from '@/constants/statsLabels';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBoardStore } from '@/stores/useBoardStore';
@@ -17,21 +18,10 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useFollowStore } from '@/stores/useFollowStore';
 import { fetchMyBoards } from '@/services/board/boardService';
 import { fetchFollowing, fetchFriendProgress } from '@/services/social/followService';
+import { getWeekDates, ratioToLevel } from '@/utils/boardHelpers';
 import { localDateStr } from '@/utils/dateFormat';
 
 type Tab = 'boards' | 'friends';
-
-const WEEKDAY_SHORT = ['일', '월', '화', '수', '목', '금', '토'];
-
-function getWeekDates(): string[] {
-  const dates: string[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    dates.push(localDateStr(d));
-  }
-  return dates;
-}
 
 export default function BoardListScreen() {
   const c = useThemeColors();
@@ -60,9 +50,9 @@ export default function BoardListScreen() {
 
   const weekDates = useMemo(() => getWeekDates(), []);
   const todayStr = localDateStr();
-  const grassHex = getGrassColor(useSettingsStore.getState().grassColor);
-  const grassCellShape = useSettingsStore.getState().grassShape;
-  const grassOpacity = [0, 0.2, 0.4, 0.65, 1];
+  const grassHex = getGrassColor(useSettingsStore((s) => s.grassColor));
+  const grassCellShape = useSettingsStore((s) => s.grassShape);
+  const grassOpacity = GRASS_OPACITY;
 
   const friendStats = useMemo(() => {
     return following.map((friend) => {
@@ -78,12 +68,7 @@ export default function BoardListScreen() {
         if (!entry) return 0;
         const total = entry.routineTotal + entry.todoTotal;
         if (total === 0) return 0;
-        const ratio = (entry.routineCompleted + entry.todoCompleted) / total;
-        if (ratio >= 1) return 4;
-        if (ratio >= 0.75) return 3;
-        if (ratio >= 0.5) return 2;
-        if (ratio > 0) return 1;
-        return 0;
+        return ratioToLevel((entry.routineCompleted + entry.todoCompleted) / total);
       });
 
       return { friend, rate, streak, weekGrass };
