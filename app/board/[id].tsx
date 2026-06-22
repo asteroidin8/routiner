@@ -17,10 +17,12 @@ import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { SheetModal, SheetPrimaryButton } from '@/components/SheetModal';
 import { PageHeader } from '@/components/settings/MyScreenUI';
+import { getGrassColor, getGrassNeonGlow, getCellBorderRadius } from '@/constants/grassTheme';
 import { radius, spacing } from '@/constants/spacing';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBoardStore } from '@/stores/useBoardStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { leaveBoard } from '@/services/board/boardService';
 import {
   createBoardRoutine,
@@ -214,6 +216,8 @@ export default function BoardDetailScreen() {
     ]);
   }
 
+  const grassHex = getGrassColor(useSettingsStore.getState().grassColor);
+  const grassCellShape = useSettingsStore((s) => s.grassShape);
   const grassOpacity = [0, 0.2, 0.4, 0.65, 1];
 
   const tabs: { key: Tab; label: string }[] = [
@@ -325,8 +329,8 @@ export default function BoardDetailScreen() {
                         style={{
                           width: 28,
                           height: 28,
-                          borderRadius: 6,
-                          backgroundColor: level === 0 ? c.surfaceMuted : c.primary,
+                          borderRadius: getCellBorderRadius(grassCellShape, 28),
+                          backgroundColor: level === 0 ? c.surfaceMuted : grassHex,
                           opacity: level === 0 ? 1 : grassOpacity[level],
                           borderWidth: level === 0 ? 1 : 0,
                           borderColor: c.border,

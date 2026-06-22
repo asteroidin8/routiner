@@ -7,8 +7,10 @@ import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { PageHeader } from '@/components/settings/MyScreenUI';
+import { getGrassColor, getCellBorderRadius } from '@/constants/grassTheme';
 import { spacing } from '@/constants/spacing';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useFollowStore } from '@/stores/useFollowStore';
 import {
   fetchFriendProgress,
@@ -90,6 +92,8 @@ export default function FriendProfileScreen() {
     [monthDates, progress],
   );
 
+  const grassHex = getGrassColor(useSettingsStore.getState().grassColor);
+  const grassCellShape = useSettingsStore.getState().grassShape;
   const grassOpacity = [0, 0.2, 0.4, 0.65, 1];
 
   function handleUnfollow() {
@@ -153,8 +157,8 @@ export default function FriendProfileScreen() {
                     style={{
                       width: 36,
                       height: 36,
-                      borderRadius: 8,
-                      backgroundColor: level === 0 ? c.surfaceMuted : c.primary,
+                      borderRadius: getCellBorderRadius(grassCellShape, 36),
+                      backgroundColor: level === 0 ? c.surfaceMuted : grassHex,
                       opacity: level === 0 ? 1 : grassOpacity[level],
                       borderWidth: level === 0 ? 1 : 0,
                       borderColor: c.border,
@@ -178,8 +182,8 @@ export default function FriendProfileScreen() {
                 style={{
                   width: 28,
                   height: 28,
-                  borderRadius: 6,
-                  backgroundColor: level === 0 ? c.surfaceMuted : c.primary,
+                  borderRadius: getCellBorderRadius(grassCellShape, 28),
+                  backgroundColor: level === 0 ? c.surfaceMuted : grassHex,
                   opacity: level === 0 ? 1 : grassOpacity[level],
                   borderWidth: level === 0 ? 1 : 0,
                   borderColor: c.border,
@@ -195,8 +199,8 @@ export default function FriendProfileScreen() {
                 style={{
                   width: 12,
                   height: 12,
-                  borderRadius: 3,
-                  backgroundColor: level === 0 ? c.surfaceMuted : c.primary,
+                  borderRadius: getCellBorderRadius(grassCellShape, 12),
+                  backgroundColor: level === 0 ? c.surfaceMuted : grassHex,
                   opacity: level === 0 ? 1 : grassOpacity[level],
                   borderWidth: level === 0 ? 1 : 0,
                   borderColor: c.border,

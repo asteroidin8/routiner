@@ -8,6 +8,7 @@ import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { ProgressBar } from '@/components/ProgressBar';
 import { DangerRow, GroupCard, InsetDivider, Row } from '@/components/settings/MyScreenUI';
+import { GRASS_COLORS, GRASS_CELL_SKINS, getCellBorderRadius, getCellTransform } from '@/constants/grassTheme';
 import { radius, spacing } from '@/constants/spacing';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -36,7 +37,7 @@ const TIME_FORMAT_OPTIONS: { value: TimeFormat; label: string }[] = [
 
 export default function MyScreen() {
   const c = useThemeColors();
-  const { themeMode, setThemeMode, timeFormat, setTimeFormat } = useSettingsStore();
+  const { themeMode, setThemeMode, timeFormat, setTimeFormat, grassColor, setGrassColor, grassShape, setGrassShape } = useSettingsStore();
   const { configured, loading, user, signInGoogle, sendEmailOtp, verifyEmailOtp, signOut } = useAuth();
   const { profile, setNickname } = useUserStore();
   const { routines } = useRoutineStore();
@@ -317,6 +318,85 @@ export default function MyScreen() {
           <InsetDivider />
           <Row label="알림" icon="Bell" onPress={() => router.push('/settings/notifications')} />
         </GroupCard>
+
+        {/* ── 잔디 테마 ── */}
+        <View style={{ gap: spacing.md }}>
+          <AppText variant="body" style={{ fontWeight: '700' }}>잔디 테마</AppText>
+
+          <AppText variant="caption" tone="tertiary">컬러</AppText>
+          <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
+            {GRASS_COLORS.map((preset) => {
+              const selected = grassColor === preset.id;
+              return (
+                <Pressable
+                  key={preset.id}
+                  onPress={() => setGrassColor(preset.id)}
+                  style={{
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: 6,
+                    borderRadius: radius.md,
+                    borderWidth: selected ? 2 : 0,
+                    borderColor: selected ? preset.hex : 'transparent',
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      backgroundColor: preset.hex,
+                    }}
+                  />
+                  <AppText variant="caption" tone={selected ? 'secondary' : 'tertiary'} style={{ fontSize: 10, fontWeight: selected ? '700' : '400' }}>
+                    {preset.name}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <AppText variant="caption" tone="tertiary" style={{ marginTop: spacing.sm }}>셀 모양</AppText>
+          <View style={{ flexDirection: 'row', gap: spacing.md }}>
+            {GRASS_CELL_SKINS.map((skin) => {
+              const selected = grassShape === skin.id;
+              const previewSize = 28;
+              const previewRadius = getCellBorderRadius(skin.id, previewSize);
+              const transform = getCellTransform(skin.id);
+              const displaySize = skin.id === 'diamond' ? 22 : previewSize;
+              const activeHex = GRASS_COLORS.find((p) => p.id === grassColor)?.hex ?? '#22C55E';
+              return (
+                <Pressable
+                  key={skin.id}
+                  onPress={() => setGrassShape(skin.id)}
+                  style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    gap: 6,
+                    paddingVertical: spacing.md,
+                    borderRadius: radius.md,
+                    borderWidth: selected ? 2 : 1,
+                    borderColor: selected ? activeHex : c.border,
+                    backgroundColor: selected ? `${activeHex}10` : 'transparent',
+                  }}
+                >
+                  <View
+                    style={{
+                      width: displaySize,
+                      height: displaySize,
+                      borderRadius: previewRadius,
+                      backgroundColor: activeHex,
+                      ...(transform.rotate ? { transform: [{ rotate: transform.rotate }] } : {}),
+                    }}
+                  />
+                  <AppText variant="caption" style={{ fontSize: 10, fontWeight: selected ? '700' : '400', color: selected ? activeHex : c.inkTertiary }}>
+                    {skin.name}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
 
         {/* ── 설정 카드 2 ── */}
         <GroupCard>

@@ -4,7 +4,9 @@ import { View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { DAY_LABELS } from '@/constants/statsLabels';
 import { spacing } from '@/constants/spacing';
+import { getCellBorderRadius, getCellTransform, getGrassColor } from '@/constants/grassTheme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { grassCellColors, type DailyGrassActivity } from '@/utils/calendarGrass';
 import { toDateStr } from '@/utils/homeDailyBoard';
 
@@ -23,6 +25,8 @@ export const ShareableGrassGrid = forwardRef<View, Props>(function ShareableGras
   ref,
 ) {
   const c = useThemeColors();
+  const grassShape = useSettingsStore((s) => s.grassShape);
+  const grassHex = getGrassColor(useSettingsStore.getState().grassColor);
   const today = toDateStr(new Date());
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -46,7 +50,7 @@ export const ShareableGrassGrid = forwardRef<View, Props>(function ShareableGras
     >
       <View style={{ alignItems: 'center', gap: 4 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <AppText variant="title" style={{ fontSize: 18, fontWeight: '700', color: c.primary }}>
+          <AppText variant="title" style={{ fontSize: 18, fontWeight: '700', color: grassHex }}>
             zndi
           </AppText>
           <AppText variant="body" style={{ fontWeight: '600' }}>
@@ -78,44 +82,52 @@ export const ShareableGrassGrid = forwardRef<View, Props>(function ShareableGras
             const level = grass?.level ?? 0;
             const colors = grassCellColors(level, c, isToday, false);
 
+            const cellRadius = getCellBorderRadius(grassShape, CELL_SIZE);
+            const cellTransform = getCellTransform(grassShape);
+            const isDiamond = grassShape === 'diamond';
+            const diamondSize = isDiamond ? Math.round(CELL_SIZE * 0.78) : CELL_SIZE;
+
             return (
-              <View
-                key={date}
-                style={{
-                  width: CELL_SIZE,
-                  height: CELL_SIZE,
-                  borderRadius: CELL_SIZE / 4,
-                  borderWidth: isToday ? 1.5 : 1,
-                  borderColor: colors.borderColor,
-                  overflow: 'hidden',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {colors.fill !== 'transparent' && (
-                  <View
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: colors.fill,
-                      opacity: colors.fillOpacity,
-                    }}
-                  />
-                )}
-                <AppText
-                  variant="caption"
-                  tone={isToday ? 'primary' : level > 0 ? 'secondary' : 'disabled'}
+              <View key={date} style={{ width: CELL_SIZE, height: CELL_SIZE, alignItems: 'center', justifyContent: 'center' }}>
+                <View
                   style={{
-                    fontSize: 11,
-                    fontWeight: isToday ? '700' : level >= 3 ? '600' : '400',
-                    zIndex: 1,
+                    width: isDiamond ? diamondSize : CELL_SIZE,
+                    height: isDiamond ? diamondSize : CELL_SIZE,
+                    borderRadius: cellRadius,
+                    borderWidth: isToday ? 1.5 : 1,
+                    borderColor: colors.borderColor,
+                    overflow: 'hidden',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    ...(cellTransform.rotate ? { transform: [{ rotate: cellTransform.rotate }] } : {}),
                   }}
                 >
-                  {new Date(`${date}T00:00:00`).getDate()}
-                </AppText>
+                  {colors.fill !== 'transparent' && (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: colors.fill,
+                        opacity: colors.fillOpacity,
+                      }}
+                    />
+                  )}
+                  <AppText
+                    variant="caption"
+                    tone={isToday ? 'primary' : level > 0 ? 'secondary' : 'disabled'}
+                    style={{
+                      fontSize: isDiamond ? 9 : 11,
+                      fontWeight: isToday ? '700' : level >= 3 ? '600' : '400',
+                      zIndex: 1,
+                      ...(cellTransform.rotate ? { transform: [{ rotate: `-${cellTransform.rotate}` }] } : {}),
+                    }}
+                  >
+                    {new Date(`${date}T00:00:00`).getDate()}
+                  </AppText>
+                </View>
               </View>
             );
           })}
@@ -123,18 +135,18 @@ export const ShareableGrassGrid = forwardRef<View, Props>(function ShareableGras
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.md, alignSelf: 'flex-end' }}>
           <AppText variant="caption" tone="disabled" style={{ fontSize: 10 }}>적음</AppText>
-          {LEGEND_LEVELS.map((level) => {
-            const legendColors = grassCellColors(level, c, false, false);
+          {LEGEND_LEVELS.map((lvl) => {
+            const legendColors = grassCellColors(lvl, c, false, false);
             return (
               <View
-                key={level}
+                key={lvl}
                 style={{
                   width: 10,
                   height: 10,
-                  borderRadius: 3,
-                  backgroundColor: level === 0 ? c.surfaceMuted : legendColors.fill,
-                  opacity: level === 0 ? 1 : legendColors.fillOpacity,
-                  borderWidth: level === 0 ? 1 : 0,
+                  borderRadius: getCellBorderRadius(grassShape, 10),
+                  backgroundColor: lvl === 0 ? c.surfaceMuted : legendColors.fill,
+                  opacity: lvl === 0 ? 1 : legendColors.fillOpacity,
+                  borderWidth: lvl === 0 ? 1 : 0,
                   borderColor: c.border,
                 }}
               />

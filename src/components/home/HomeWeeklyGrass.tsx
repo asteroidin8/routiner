@@ -3,11 +3,12 @@ import { View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { SectionHeader } from '@/components/SectionHeader';
 import { HOME_COPY } from '@/constants/copy';
+import { getGrassColor, getGrassNeonGlow, getCellBorderRadius } from '@/constants/grassTheme';
 import { opacity, radius, spacing } from '@/constants/spacing';
-import { grassGlowShadow } from '@/constants/themeEffects';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { getTimeGreeting } from '@/utils/dateFormat';
 import { getWeekDayDots, toDateStr, type DayDotStatus } from '@/utils/homeDailyBoard';
 
@@ -15,12 +16,12 @@ const CELL_SIZE = 14;
 const CELL_SIZE_TODAY = 16;
 const CELL_GAP = 6;
 
-function cellColor(status: DayDotStatus, c: ReturnType<typeof useThemeColors>) {
+function cellColor(status: DayDotStatus, c: ReturnType<typeof useThemeColors>, grassHex: string) {
   switch (status) {
     case 'full':
-      return { bg: c.primary, border: c.primary, glow: true };
+      return { bg: grassHex, border: grassHex, glow: true };
     case 'partial':
-      return { bg: c.primary, border: c.borderStrong, glow: false };
+      return { bg: grassHex, border: c.borderStrong, glow: false };
     case 'empty':
       return { bg: c.surfaceSubtle, border: c.borderStrong, glow: false };
     default:
@@ -31,6 +32,9 @@ function cellColor(status: DayDotStatus, c: ReturnType<typeof useThemeColors>) {
 /** 홈 — 이번 주 7칸 잔디 */
 export function HomeWeeklyGrass() {
   const c = useThemeColors();
+  const grassColor = useSettingsStore((s) => s.grassColor);
+  const grassShape = useSettingsStore((s) => s.grassShape);
+  const grassHex = getGrassColor(grassColor);
   const { routines } = useRoutineStore();
   const { isCompleted } = useRoutineCompletionStore();
 
@@ -66,7 +70,7 @@ export function HomeWeeklyGrass() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           {weekDots.map((dot, index) => {
             const isToday = dot.dateStr === todayStr;
-            const colors = cellColor(dot.status, c);
+            const colors = cellColor(dot.status, c, grassHex);
             const cellSize = isToday ? CELL_SIZE_TODAY : CELL_SIZE;
             const partial = dot.status === 'partial';
             const statusA11y =
@@ -87,12 +91,18 @@ export function HomeWeeklyGrass() {
                   style={{
                     width: cellSize,
                     height: cellSize,
-                    borderRadius: radius.xs,
+                    borderRadius: getCellBorderRadius(grassShape, cellSize),
                     backgroundColor: colors.bg,
                     opacity: partial ? opacity.partial : 1,
                     borderWidth: isToday ? 1.5 : (dot.status === 'none' || dot.status === 'empty' ? 1 : 0),
-                    borderColor: isToday ? c.primary : colors.border,
-                    ...(colors.glow ? grassGlowShadow(c) : {}),
+                    borderColor: isToday ? grassHex : colors.border,
+                    ...(colors.glow ? {
+                      shadowColor: getGrassNeonGlow(grassHex),
+                      shadowOpacity: 0.6,
+                      shadowRadius: 4,
+                      shadowOffset: { width: 0, height: 0 },
+                      elevation: 3,
+                    } : {}),
                   }}
                 />
                 <AppText

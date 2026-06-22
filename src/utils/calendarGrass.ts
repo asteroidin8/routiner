@@ -1,5 +1,7 @@
 import type { ThemeColors } from '@/constants/colors';
+import { getGrassColor, getGrassNeonGlow } from '@/constants/grassTheme';
 import type { Routine } from '@/stores/useRoutineStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { Todo } from '@/stores/useTodoStore';
 
 import { localDateStr } from './dateFormat';
@@ -83,23 +85,27 @@ export function grassCellColors(
   c: ThemeColors,
   isToday: boolean,
   hasFasting: boolean,
+  colorOverride?: string,
 ) {
+  const grassHex = colorOverride ?? getGrassColor(useSettingsStore.getState().grassColor);
+
   if (level === 0) {
     return {
       fill: hasFasting ? c.surfaceSubtle : 'transparent',
       fillOpacity: 1,
       borderColor: isToday ? c.accent : hasFasting ? c.borderStrong : c.border,
       glow: false,
+      neonGlow: getGrassNeonGlow(grassHex),
     };
   }
 
-  const fill = c.primary;
   const fillOpacity = level === 1 ? 0.2 : level === 2 ? 0.4 : level === 3 ? 0.65 : 1;
 
   return {
-    fill,
+    fill: grassHex,
     fillOpacity,
-    borderColor: isToday ? c.accent : level >= 3 ? c.primary : c.borderStrong,
+    borderColor: isToday ? c.accent : level >= 3 ? grassHex : c.borderStrong,
     glow: level >= 3,
+    neonGlow: getGrassNeonGlow(grassHex),
   };
 }
