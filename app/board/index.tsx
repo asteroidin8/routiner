@@ -8,10 +8,12 @@ import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { PageHeader } from '@/components/settings/MyScreenUI';
+import { getGrassColor, getCellBorderRadius } from '@/constants/grassTheme';
 import { radius, spacing } from '@/constants/spacing';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBoardStore } from '@/stores/useBoardStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useFollowStore } from '@/stores/useFollowStore';
 import { fetchMyBoards } from '@/services/board/boardService';
 import { fetchFollowing, fetchFriendProgress } from '@/services/social/followService';
@@ -58,6 +60,8 @@ export default function BoardListScreen() {
 
   const weekDates = useMemo(() => getWeekDates(), []);
   const todayStr = localDateStr();
+  const grassHex = getGrassColor(useSettingsStore.getState().grassColor);
+  const grassCellShape = useSettingsStore.getState().grassShape;
   const grassOpacity = [0, 0.2, 0.4, 0.65, 1];
 
   const friendStats = useMemo(() => {
@@ -251,8 +255,8 @@ export default function BoardListScreen() {
                       style={{
                         width: 28,
                         height: 28,
-                        borderRadius: 6,
-                        backgroundColor: level === 0 ? c.surfaceMuted : c.primary,
+                        borderRadius: getCellBorderRadius(grassCellShape, 28),
+                        backgroundColor: level === 0 ? c.surfaceMuted : grassHex,
                         opacity: level === 0 ? 1 : grassOpacity[level],
                         borderWidth: level === 0 ? 1 : 0,
                         borderColor: c.border,

@@ -3,9 +3,11 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { AppText } from '@/components/AppText';
 import { DAY_LABELS } from '@/constants/statsLabels';
+import { getCellBorderRadius, getCellTransform } from '@/constants/grassTheme';
 import { motion } from '@/constants/motion';
 import { spacing } from '@/constants/spacing';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { grassCellColors, type DailyGrassActivity } from '@/utils/calendarGrass';
 import { toDateStr } from '@/utils/homeDailyBoard';
 import type { DailyFastingSummary } from '@/utils/statsHelper';
@@ -23,6 +25,7 @@ type Props = {
 
 export function StatsMonthGrid({ year, month, summaries, grassMap, onSelect }: Props) {
   const c = useThemeColors();
+  const grassShape = useSettingsStore((s) => s.grassShape);
   const dateMap = new Map(summaries.map((s) => [s.date, s]));
   const today = toDateStr(new Date());
   const firstDay = new Date(year, month, 1).getDay();
@@ -67,24 +70,31 @@ export function StatsMonthGrid({ year, month, summaries, grassMap, onSelect }: P
             .filter(Boolean)
             .join(', ');
 
+          const cellRadius = getCellBorderRadius(grassShape, CELL_SIZE);
+          const cellTransform = getCellTransform(grassShape);
+          const isDiamond = grassShape === 'diamond';
+          const diamondSize = isDiamond ? Math.round(CELL_SIZE * 0.78) : CELL_SIZE;
+
           return (
             <Animated.View key={`${year}-${month}-${date}`} entering={FadeIn.delay(staggerDelay).duration(200)}>
+            <View style={{ width: CELL_SIZE, height: CELL_SIZE, alignItems: 'center', justifyContent: 'center' }}>
             <Pressable
               onPress={() => summary && onSelect(summary)}
               accessibilityRole="button"
               accessibilityLabel={a11yParts}
               style={{
-                width: CELL_SIZE,
-                height: CELL_SIZE,
-                borderRadius: CELL_SIZE / 4,
+                width: isDiamond ? diamondSize : CELL_SIZE,
+                height: isDiamond ? diamondSize : CELL_SIZE,
+                borderRadius: cellRadius,
                 borderWidth: isToday ? 1.5 : 1,
                 borderColor: colors.borderColor,
                 overflow: 'hidden',
                 alignItems: 'center',
                 justifyContent: 'center',
+                ...(cellTransform.rotate ? { transform: [{ rotate: cellTransform.rotate }] } : {}),
                 ...(colors.glow
                   ? {
-                      shadowColor: c.neonGlow,
+                      shadowColor: colors.neonGlow,
                       shadowOpacity: 0.5,
                       shadowRadius: 5,
                       shadowOffset: { width: 0, height: 0 },
@@ -110,14 +120,16 @@ export function StatsMonthGrid({ year, month, summaries, grassMap, onSelect }: P
                 variant="caption"
                 tone={isToday ? 'primary' : level > 0 ? 'secondary' : hasFasting ? 'secondary' : 'disabled'}
                 style={{
-                  fontSize: 11,
+                  fontSize: isDiamond ? 9 : 11,
                   fontWeight: isToday ? '700' : level >= 3 ? '600' : '400',
                   zIndex: 1,
+                  ...(cellTransform.rotate ? { transform: [{ rotate: `-${cellTransform.rotate}` }] } : {}),
                 }}
               >
                 {new Date(`${date}T00:00:00`).getDate()}
               </AppText>
             </Pressable>
+            </View>
             </Animated.View>
           );
         })}
@@ -125,18 +137,19 @@ export function StatsMonthGrid({ year, month, summaries, grassMap, onSelect }: P
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.md, alignSelf: 'flex-end' }}>
         <AppText variant="caption" tone="disabled" style={{ fontSize: 10 }}>적음</AppText>
-        {LEGEND_LEVELS.map((level) => {
-          const legendColors = grassCellColors(level, c, false, false);
+        {LEGEND_LEVELS.map((lvl) => {
+          const legendColors = grassCellColors(lvl, c, false, false);
+          const legendRadius = getCellBorderRadius(grassShape, 10);
           return (
             <View
-              key={level}
+              key={lvl}
               style={{
                 width: 10,
                 height: 10,
-                borderRadius: 3,
-                backgroundColor: level === 0 ? c.surfaceMuted : legendColors.fill,
-                opacity: level === 0 ? 1 : legendColors.fillOpacity,
-                borderWidth: level === 0 ? 1 : 0,
+                borderRadius: legendRadius,
+                backgroundColor: lvl === 0 ? c.surfaceMuted : legendColors.fill,
+                opacity: lvl === 0 ? 1 : legendColors.fillOpacity,
+                borderWidth: lvl === 0 ? 1 : 0,
                 borderColor: c.border,
               }}
             />
