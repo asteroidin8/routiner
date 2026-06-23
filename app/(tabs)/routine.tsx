@@ -162,7 +162,7 @@ export default function RoutineScreen() {
     setModalVisible(true);
   }
 
-  function handleSave(data: { name: string; repeatType: import('@/types').RepeatType; repeatDays: Weekday[]; monthDates: number[]; section: string | null; reminderTime: string | null; groupId: string | null }) {
+  function handleSave(data: { name: string; repeatType: import('@/types').RepeatType; repeatDays: Weekday[]; monthDates: number[]; repeatInterval: number; section: string | null; reminderTime: string | null; groupId: string | null }) {
     if (editTarget) {
       updateRoutine(editTarget.id, data);
     } else {

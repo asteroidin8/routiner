@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import {
+  Dimensions,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -77,6 +78,7 @@ export function SheetModal({ visible, onClose, title, headerRight, footer, child
               backgroundColor: c.surface,
               borderTopLeftRadius: radius.sheet,
               borderTopRightRadius: radius.sheet,
+              maxHeight: Dimensions.get('window').height * 0.88,
               paddingTop: spacing.card,
               paddingBottom: Math.max(insets.bottom, spacing.card),
             }}
@@ -104,7 +106,7 @@ export function SheetModal({ visible, onClose, title, headerRight, footer, child
 
             {scrollable ? (
               <ScrollView
-                style={{ maxHeight: '80%' }}
+                style={{ flexShrink: 1 }}
                 contentContainerStyle={{ paddingHorizontal: spacing.screen }}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
