@@ -224,53 +224,53 @@ export default function StatsScreen() {
         ) : (
           <>
             <View style={{ gap: 12 }}>
-              <AppText variant="caption" tone="tertiary">
-                {L.grassCalendarHint}
-              </AppText>
-
-              <View
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}
-              >
-                <Pressable onPress={prevMonth} hitSlop={8} style={{ padding: 4 }}>
-                  <AppIcon name="ChevronLeft" size={18} color={c.inkSecondary} />
-                </Pressable>
-                <AppText variant="body" style={{ fontWeight: '700', minWidth: 90, textAlign: 'center' }}>
-                  {viewYear}
-                  {L.yearSuffix} {viewMonth + 1}
-                  {L.monthSuffix}
-                </AppText>
-                <Pressable
-                  onPress={nextMonth}
-                  hitSlop={8}
-                  style={{ padding: 4, opacity: isCurrentMonth ? 0.3 : 1 }}
-                  disabled={isCurrentMonth}
-                >
-                  <AppIcon name="ChevronRight" size={18} color={c.inkSecondary} />
-                </Pressable>
-                {!isCurrentMonth && (
-                  <Pressable
-                    onPress={goToday}
-                    style={{
-                      paddingHorizontal: 10,
-                      paddingVertical: 4,
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: c.border,
-                    }}
-                  >
-                    <AppText variant="caption" tone="tertiary">
-                      {L.today}
-                    </AppText>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  {!isCurrentMonth && (
+                    <Pressable
+                      onPress={goToday}
+                      style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 8,
+                        borderWidth: 1,
+                        borderColor: c.border,
+                      }}
+                    >
+                      <AppText variant="caption" tone="tertiary">
+                        {L.today}
+                      </AppText>
+                    </Pressable>
+                  )}
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <Pressable onPress={prevMonth} hitSlop={8} style={{ padding: 4 }}>
+                    <AppIcon name="ChevronLeft" size={18} color={c.inkSecondary} />
                   </Pressable>
-                )}
-                <Pressable
-                  onPress={() => share(viewYear, viewMonth)}
-                  hitSlop={8}
-                  style={{ padding: 4, marginLeft: 'auto' }}
-                  accessibilityLabel="잔디 공유"
-                >
-                  <AppIcon name="Share2" size={16} color={c.inkTertiary} />
-                </Pressable>
+                  <AppText variant="body" style={{ fontWeight: '700', minWidth: 90, textAlign: 'center' }}>
+                    {viewYear}
+                    {L.yearSuffix} {viewMonth + 1}
+                    {L.monthSuffix}
+                  </AppText>
+                  <Pressable
+                    onPress={nextMonth}
+                    hitSlop={8}
+                    style={{ padding: 4, opacity: isCurrentMonth ? 0.3 : 1 }}
+                    disabled={isCurrentMonth}
+                  >
+                    <AppIcon name="ChevronRight" size={18} color={c.inkSecondary} />
+                  </Pressable>
+                </View>
+                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end' }}>
+                  <Pressable
+                    onPress={() => share(viewYear, viewMonth)}
+                    hitSlop={8}
+                    style={{ padding: 4 }}
+                    accessibilityLabel="잔디 공유"
+                  >
+                    <AppIcon name="Share2" size={16} color={c.inkTertiary} />
+                  </Pressable>
+                </View>
               </View>
 
               <StatsMonthGrid

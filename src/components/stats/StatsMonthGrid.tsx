@@ -13,7 +13,8 @@ import { toDateStr } from '@/utils/homeDailyBoard';
 import type { DailyFastingSummary } from '@/utils/statsHelper';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CELL_SIZE = Math.floor((SCREEN_WIDTH - 40 - 6 * 6) / 7);
+const SCREEN_BORDER = 4;
+const CELL_SIZE = Math.floor((SCREEN_WIDTH - SCREEN_BORDER - 40 - 6 * 6) / 7);
 
 type Props = {
   year: number;
