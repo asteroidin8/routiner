@@ -1,9 +1,7 @@
 import { useEffect } from 'react';
 import {
   Dimensions,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -56,11 +54,7 @@ export function SheetModal({ visible, onClose, title, headerRight, footer, child
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={{ flex: 1, justifyContent: 'flex-end' }}
-        behavior="padding"
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 6 : 0}
-      >
+      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Animated.View
           style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.4)' }, backdropStyle]}
         >
@@ -133,7 +127,7 @@ export function SheetModal({ visible, onClose, title, headerRight, footer, child
             ) : null}
           </View>
         </Animated.View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

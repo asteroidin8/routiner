@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { Keyboard, Pressable, ScrollView, TextInput, View } from 'react-native';
 
 import { AppText } from './AppText';
@@ -91,7 +91,6 @@ type Props = {
   section: string;
   onSectionChange: (s: string) => void;
   onDatePickerOpen: () => void;
-  onSubmit: () => void;
 };
 
 export function TodoFormFields({
@@ -106,7 +105,6 @@ export function TodoFormFields({
   section,
   onSectionChange,
   onDatePickerOpen,
-  onSubmit,
 }: Props) {
   const c = useThemeColors();
   const { todos, groups } = useTodoStore();
@@ -126,7 +124,7 @@ export function TodoFormFields({
         placeholderTextColor={c.inkDisabled}
         autoFocus
         returnKeyType="done"
-        onSubmitEditing={onSubmit}
+        onSubmitEditing={() => Keyboard.dismiss()}
         style={{
           fontSize: 16,
           color: c.ink,

@@ -62,7 +62,6 @@ export function TodoEditModal({ visible, todo, onSave, onDelete, onClose }: Prop
           section={section}
           onSectionChange={setSection}
           onDatePickerOpen={() => setDatePickerVisible(true)}
-          onSubmit={handleSave}
         />
       </SheetModal>
 

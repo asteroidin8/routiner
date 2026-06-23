@@ -175,6 +175,8 @@ export function RoutineModal({ visible, initial, onSave, onDelete, onClose }: Pr
           placeholder="되고 싶은 내 모습을 입력해보세요"
           placeholderTextColor={c.inkDisabled}
           autoFocus
+          returnKeyType="done"
+          onSubmitEditing={() => Keyboard.dismiss()}
           style={{
             fontSize: 16,
             color: c.ink,
