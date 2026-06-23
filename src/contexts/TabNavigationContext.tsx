@@ -6,12 +6,14 @@ interface TabNavigationContextValue {
   navigateTo: (index: TabIndex) => void;
   scrollTick: Record<number, number>;
   scrollToTop: (index: TabIndex) => void;
+  setTabBarVisible: (visible: boolean) => void;
 }
 
 export const TabNavigationContext = createContext<TabNavigationContextValue>({
   navigateTo: () => {},
   scrollTick: {},
   scrollToTop: () => {},
+  setTabBarVisible: () => {},
 });
 
 export function useTabNavigation() {

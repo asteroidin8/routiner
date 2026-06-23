@@ -19,7 +19,7 @@ import { type TodoCreatePayload, TodoModal } from '@/components/TodoModal';
 import { UndoSnackbar } from '@/components/UndoSnackbar';
 import { UngroupedHeader } from '@/components/UngroupedHeader';
 import { radius, spacing } from '@/constants/spacing';
-import { useTabScrollToTop } from '@/contexts/TabNavigationContext';
+import { useTabNavigation, useTabScrollToTop } from '@/contexts/TabNavigationContext';
 import { useEditMode } from '@/hooks/useEditMode';
 import { appAlert, appPrompt } from '@/stores/useAlertStore';
 import { useProStore } from '@/stores/useProStore';
@@ -147,7 +147,10 @@ export default function TodoScreen() {
   const dragFromRef = useRef(-1);
   const dragSourceGroupRef = useRef<string | null>(null);
   const prevDragTargetRef = useRef<string | null>(null);
-  const { editMode, selectedIds, enterEditMode, exitEditMode, toggleSelection, toggleSelectAll } = useEditMode();
+  const { setTabBarVisible } = useTabNavigation();
+  const { editMode, selectedIds, enterEditMode: _enterEditMode, exitEditMode: _exitEditMode, toggleSelection, toggleSelectAll } = useEditMode();
+  const enterEditMode = useCallback(() => { _enterEditMode(); setTabBarVisible(false); }, [_enterEditMode, setTabBarVisible]);
+  const exitEditMode = useCallback(() => { _exitEditMode(); setTabBarVisible(true); }, [_exitEditMode, setTabBarVisible]);
 
   const activeTodos = todos.filter((t) => !t.completedAt);
   const completedTodos = todos.filter((t) => !!t.completedAt);
