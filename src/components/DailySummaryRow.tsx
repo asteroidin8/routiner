@@ -52,11 +52,18 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
   const incompleteRoutines = todayRoutines.filter((r) => !isCompleted(r.id, today));
   const activeTodos = todos.filter((t) => !t.completedAt);
 
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayCompletedTodos = todos.filter(
+    (t) => t.completedAt && t.completedAt >= todayStart.getTime(),
+  );
+  const allTodosDone = todayCompletedTodos.length > 0 && activeTodos.length === 0;
+
   const allRoutinesDone =
     todayRoutines.length > 0 && incompleteRoutines.length === 0;
 
   const hasRoutines = todayRoutines.length > 0;
-  const hasTodos = activeTodos.length > 0;
+  const hasTodos = activeTodos.length > 0 || allTodosDone;
 
   const completedCount = todayRoutines.length - incompleteRoutines.length;
   const progressRatio = todayRoutines.length > 0 ? completedCount / todayRoutines.length : 0;
@@ -111,7 +118,9 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
         <View
           style={{
             ...cardStyle,
-            ...(allRoutinesDone ? { borderColor: `${c.primary}30` } : {}),
+            ...(allRoutinesDone
+              ? { backgroundColor: c.primary, borderColor: c.primary }
+              : {}),
           }}
         >
           <Pressable
@@ -121,33 +130,35 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
             accessibilityLabel="루틴 탭으로 이동"
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.primary }} />
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: allRoutinesDone ? '#fff' : c.primary }} />
               <AppText
                 variant="body"
                 style={{
                   fontWeight: '600',
-                  ...(allRoutinesDone ? { color: c.primary } : {}),
+                  color: allRoutinesDone ? '#fff' : c.ink,
                 }}
               >
                 오늘의 루틴
               </AppText>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-              <AppText variant="caption" tone="tertiary">
+              <AppText variant="caption" style={{ color: allRoutinesDone ? 'rgba(255,255,255,0.7)' : c.inkTertiary }}>
                 {completedCount}/{todayRoutines.length}
               </AppText>
-              <AppIcon name="ChevronRight" size={size.iconSm} color={c.inkTertiary} />
+              <AppIcon name={allRoutinesDone ? 'Check' : 'ChevronRight'} size={size.iconSm} color={allRoutinesDone ? '#fff' : c.inkTertiary} />
             </View>
           </Pressable>
 
-          <View style={{ height: 3, backgroundColor: `${c.primary}15`, marginHorizontal: spacing.card, borderRadius: 2 }}>
-            <Animated.View
-              style={[
-                { height: 3, backgroundColor: c.primary, borderRadius: 2 },
-                progressStyle,
-              ]}
-            />
-          </View>
+          {!allRoutinesDone && (
+            <View style={{ height: 3, backgroundColor: `${c.primary}15`, marginHorizontal: spacing.card, borderRadius: 2 }}>
+              <Animated.View
+                style={[
+                  { height: 3, backgroundColor: c.primary, borderRadius: 2 },
+                  progressStyle,
+                ]}
+              />
+            </View>
+          )}
 
           {displayRoutines.length > 0 && (
             <>
@@ -197,7 +208,14 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
       )}
 
       {hasTodos && (
-        <View style={cardStyle}>
+        <View
+          style={{
+            ...cardStyle,
+            ...(allTodosDone
+              ? { backgroundColor: c.primary, borderColor: c.primary }
+              : {}),
+          }}
+        >
           <Pressable
             onPress={onTodoPress}
             style={headerRowStyle}
@@ -205,61 +223,65 @@ export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
             accessibilityLabel="할일 탭으로 이동"
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.primary }} />
-              <AppText variant="body" style={{ fontWeight: '600' }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: allTodosDone ? '#fff' : c.primary }} />
+              <AppText variant="body" style={{ fontWeight: '600', color: allTodosDone ? '#fff' : c.ink }}>
                 오늘의 할 일
               </AppText>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-              <AppText variant="caption" tone="tertiary">
-                {activeTodos.length}개
+              <AppText variant="caption" style={{ color: allTodosDone ? 'rgba(255,255,255,0.7)' : c.inkTertiary }}>
+                {allTodosDone ? `${todayCompletedTodos.length}개 완료` : `${activeTodos.length}개`}
               </AppText>
-              <AppIcon name="ChevronRight" size={size.iconSm} color={c.inkTertiary} />
+              <AppIcon name={allTodosDone ? 'Check' : 'ChevronRight'} size={size.iconSm} color={allTodosDone ? '#fff' : c.inkTertiary} />
             </View>
           </Pressable>
 
-          <View style={{ height: 1, backgroundColor: c.border }} />
+          {!allTodosDone && (
+            <>
+              <View style={{ height: 1, backgroundColor: c.border }} />
 
-          {displayTodos.map((todo, index) => (
-            <View key={todo.id}>
-              <View style={itemRowStyle}>
-                <CompletionCheckbox
-                  checked={false}
-                  onToggle={() => {
-                    completeTodo(todo.id);
-                    pulseTodoBar();
-                  }}
-                  size={size.checkboxSm}
-                  iconSize={10}
-                  shape="circle"
-                  label={`${todo.title} 완료`}
-                />
-                <AppText variant="body" style={{ flex: 1 }} numberOfLines={1}>
-                  {todo.title}
-                </AppText>
-                <TodoPriorityBadge priority={todo.priority} />
-              </View>
-              {index < displayTodos.length - 1 && (
-                <View
-                  style={{
-                    height: 1,
-                    backgroundColor: c.border,
-                    marginLeft: spacing.card + size.checkboxSm + spacing.sm + 2,
-                  }}
-                />
+              {displayTodos.map((todo, index) => (
+                <View key={todo.id}>
+                  <View style={itemRowStyle}>
+                    <CompletionCheckbox
+                      checked={false}
+                      onToggle={() => {
+                        completeTodo(todo.id);
+                        pulseTodoBar();
+                      }}
+                      size={size.checkboxSm}
+                      iconSize={10}
+                      shape="circle"
+                      label={`${todo.title} 완료`}
+                    />
+                    <AppText variant="body" style={{ flex: 1 }} numberOfLines={1}>
+                      {todo.title}
+                    </AppText>
+                    <TodoPriorityBadge priority={todo.priority} />
+                  </View>
+                  {index < displayTodos.length - 1 && (
+                    <View
+                      style={{
+                        height: 1,
+                        backgroundColor: c.border,
+                        marginLeft: spacing.card + size.checkboxSm + spacing.sm + 2,
+                      }}
+                    />
+                  )}
+                </View>
+              ))}
+
+              {hiddenTodoCount > 0 && (
+                <Pressable
+                  onPress={onTodoPress}
+                  style={{ paddingHorizontal: spacing.card, paddingVertical: spacing.sm + 2 }}
+                >
+                  <AppText variant="caption" tone="tertiary">
+                    +{hiddenTodoCount}개 더보기
+                  </AppText>
+                </Pressable>
               )}
-            </View>
-          ))}
-
-          {hiddenTodoCount > 0 && (
-            <Pressable
-              onPress={onTodoPress}
-              style={{ paddingHorizontal: spacing.card, paddingVertical: spacing.sm + 2 }}
-            >
-              <AppText variant="caption" tone="tertiary">
-                +{hiddenTodoCount}개 더보기
-              </AppText>
-            </Pressable>
+            </>
           )}
         </View>
       )}
