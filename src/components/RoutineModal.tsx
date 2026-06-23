@@ -19,7 +19,6 @@ const PRESET_OPTIONS: { type: RepeatType; label: string }[] = [
   { type: 'daily', label: '매일' },
   { type: 'weekly', label: '매주' },
   { type: 'monthly', label: '매월' },
-  { type: 'yearly', label: '매년' },
 ];
 
 const MONTH_ROWS = [
