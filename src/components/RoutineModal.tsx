@@ -58,7 +58,6 @@ export function RoutineModal({ visible, initial, onSave, onDelete, onClose }: Pr
   const [repeatType, setRepeatType] = useState<RepeatType>(initial?.repeatType ?? 'weekly');
   const [days, setDays] = useState<Weekday[]>(initial?.repeatDays ?? [1, 2, 3, 4, 5]);
   const [monthDates, setMonthDates] = useState<number[]>(initial?.monthDates ?? []);
-  const [repeatInterval, setRepeatInterval] = useState(initial?.repeatInterval ?? 1);
   const [section, setSection] = useState<string>(initial?.section ?? '');
   const [reminderTime, setReminderTime] = useState<string | null>(initial?.reminderTime ?? null);
   const [groupId, setGroupId] = useState<string | null>(initial?.groupId ?? null);
@@ -78,7 +77,6 @@ export function RoutineModal({ visible, initial, onSave, onDelete, onClose }: Pr
     setRepeatType(initial?.repeatType ?? 'weekly');
     setDays(initial?.repeatDays ?? [1, 2, 3, 4, 5]);
     setMonthDates(initial?.monthDates ?? []);
-    setRepeatInterval(initial?.repeatInterval ?? 1);
     setSection(initial?.section ?? '');
     setReminderTime(initial?.reminderTime ?? null);
     setGroupId(initial?.groupId ?? null);
@@ -114,7 +112,6 @@ export function RoutineModal({ visible, initial, onSave, onDelete, onClose }: Pr
     setRepeatType('weekly');
     setDays([1, 2, 3, 4, 5]);
     setMonthDates([]);
-    setRepeatInterval(1);
     setSection('');
     setReminderTime(null);
     setGroupId(null);
