@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { Keyboard, Pressable, ScrollView, TextInput, View } from 'react-native';
 
 import { AppText } from './AppText';
