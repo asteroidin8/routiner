@@ -22,7 +22,9 @@ const FEATURES: FeatureRow[] = [
   { label: '할일 그룹', free: '1개', pro: '무제한' },
   { label: '보드', free: '1개', pro: '무제한' },
   { label: '섹션', free: false, pro: true },
-  { label: '잔디 꾸미기', free: false, pro: true },
+  { label: '테마 컬러', free: '1종', pro: '전체' },
+  { label: '잔디 모양', free: '1종', pro: '전체' },
+  { label: '셀 애니메이션', free: false, pro: true },
   { label: '클라우드 동기화', free: true, pro: true },
 ];
 

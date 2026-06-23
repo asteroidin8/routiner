@@ -1,4 +1,5 @@
 import { Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from './AppText';
 import { spacing } from '@/constants/spacing';
@@ -13,20 +14,17 @@ type Props = {
 
 export function EditBottomBar({ selectedCount, totalCount, onSelectAll, onDelete }: Props) {
   const c = useThemeColors();
+  const insets = useSafeAreaInsets();
   const allSelected = selectedCount === totalCount && totalCount > 0;
   return (
     <View
       style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: spacing.screen,
         paddingVertical: spacing.md,
-        paddingBottom: spacing.section,
+        paddingBottom: Math.max(insets.bottom, spacing.section),
         backgroundColor: c.surfaceSubtle,
         borderTopWidth: 1,
         borderTopColor: c.border,
