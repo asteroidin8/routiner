@@ -1,15 +1,12 @@
 import { View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { SectionHeader } from '@/components/SectionHeader';
-import { HOME_COPY } from '@/constants/copy';
 import { getGrassColor, getGrassNeonGlow, getCellBorderRadius } from '@/constants/grassTheme';
 import { opacity, radius, spacing } from '@/constants/spacing';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { getTimeGreeting } from '@/utils/dateFormat';
 import { getWeekDayDots, toDateStr, type DayDotStatus } from '@/utils/homeDailyBoard';
 
 const CELL_SIZE = 14;
@@ -40,23 +37,9 @@ export function HomeWeeklyGrass() {
 
   const todayStr = toDateStr(new Date());
   const weekDots = getWeekDayDots(routines, isCompleted);
-  const activeDays = weekDots.filter((d) => d.status !== 'none');
-  const fullDays = weekDots.filter((d) => d.status === 'full').length;
-  const weekSummary =
-    activeDays.length > 0 ? `${fullDays}/${activeDays.length}일` : '이번 주 기록 없음';
-
-  const greeting = getTimeGreeting();
 
   return (
-    <View style={{ gap: spacing.sm }}>
-      <AppText variant="caption" tone="tertiary">{greeting}</AppText>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <SectionHeader title={HOME_COPY.weekSection} />
-        <AppText variant="caption" tone="tertiary">
-          {weekSummary}
-        </AppText>
-      </View>
-
+    <View>
       <View
         style={{
           backgroundColor: c.surfaceSubtle,

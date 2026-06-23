@@ -41,18 +41,23 @@ export function getDayDotStatus(completed: number, total: number): DayDotStatus 
   return 'partial';
 }
 
-/** 최근 7일(오늘 포함) 루틴 달성 점 */
+/** 이번 주(월~일) 루틴 달성 점 */
 export function getWeekDayDots(
   routines: Routine[],
   isCompleted: (routineId: string, date: string) => boolean,
 ): WeekDayDot[] {
   const dots: WeekDayDot[] = [];
-  const cursor = new Date();
-  cursor.setHours(12, 0, 0, 0);
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
 
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(cursor);
-    date.setDate(cursor.getDate() - i);
+  const jsDay = today.getDay();
+  const mondayOffset = jsDay === 0 ? -6 : 1 - jsDay;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset);
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
     const dateStr = toDateStr(date);
     const dayOfWeek = date.getDay();
     const { completed, total } = getRoutineProgressForDate(dateStr, dayOfWeek, routines, isCompleted);
