@@ -44,7 +44,8 @@ export default function MyScreen() {
   const { isPro } = useProStore();
   const { configured, loading, user, signInGoogle, sendEmailOtp, verifyEmailOtp, signOut } = useAuth();
   const { profile, setNickname } = useUserStore();
-  const { routines } = useRoutineStore();
+  const allRoutines = useRoutineStore((s) => s.routines);
+  const routines = allRoutines.filter((r) => !r.deletedAt);
   const { isCompleted, completions } = useRoutineCompletionStore();
   const streak = getRoutineStreakDays(routines, isCompleted);
   const totalGrass = Object.keys(completions).length;

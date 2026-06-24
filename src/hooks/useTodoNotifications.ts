@@ -21,7 +21,7 @@ export function useTodoNotifications() {
 
       await cancelNotificationsByPrefix(NOTIFICATION_ID.todoPrefix);
 
-      const activeTodos = todos.filter((t) => !t.completedAt && t.dueDate);
+      const activeTodos = todos.filter((t) => !t.deletedAt && !t.completedAt && t.dueDate);
 
       for (const todo of activeTodos) {
         if (!todo.dueDate) continue;

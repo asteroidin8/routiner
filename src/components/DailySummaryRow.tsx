@@ -33,8 +33,10 @@ type Props = {
 
 export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
   const c = useThemeColors();
-  const { routines } = useRoutineStore();
-  const { todos, completeTodo } = useTodoStore();
+  const allRoutines = useRoutineStore((s) => s.routines);
+  const routines = allRoutines.filter((r) => !r.deletedAt);
+  const { todos: allTodos, completeTodo } = useTodoStore();
+  const todos = allTodos.filter((t) => !t.deletedAt);
   const { isCompleted, toggleCompletion } = useRoutineCompletionStore();
 
   const today = getTodayDate();

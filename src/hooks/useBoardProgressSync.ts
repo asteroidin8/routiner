@@ -12,8 +12,8 @@ import { localDateStr } from '@/utils/dateFormat';
 import { isRoutineScheduledForDate } from '@/utils/routineSchedule';
 
 function computeDailyProgress() {
-  const routines = useRoutineStore.getState().routines;
-  const todos = useTodoStore.getState().todos;
+  const routines = useRoutineStore.getState().routines.filter((r) => !r.deletedAt);
+  const todos = useTodoStore.getState().todos.filter((t) => !t.deletedAt && !t.archivedDate);
   const isCompleted = useRoutineCompletionStore.getState().isCompleted;
 
   const now = new Date();
@@ -23,9 +23,8 @@ function computeDailyProgress() {
   const routineCompleted = todayRoutines.filter((r) => isCompleted(r.id, todayStr)).length;
   const routineTotal = todayRoutines.length;
 
-  const activeTodos = todos.filter((t) => !t.archivedDate);
-  const todoCompleted = activeTodos.filter((t) => t.completedAt !== null).length;
-  const todoTotal = activeTodos.length;
+  const todoCompleted = todos.filter((t) => t.completedAt !== null).length;
+  const todoTotal = todos.length;
 
   let streak = 0;
   for (let i = 0; i < 365; i++) {

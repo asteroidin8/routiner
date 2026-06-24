@@ -6,6 +6,8 @@ import type { Routine, RoutineGroup } from '@/types';
 
 export type { Routine, RoutineGroup, Weekday, RepeatType } from '@/types';
 
+const DELETED_RETENTION_DAYS = 400;
+
 type RoutineStore = {
   routines: Routine[];
   groups: RoutineGroup[];
@@ -13,6 +15,8 @@ type RoutineStore = {
   updateRoutine: (id: string, updates: Partial<Routine>) => void;
   removeRoutine: (id: string) => void;
   removeRoutines: (ids: string[]) => void;
+  undoRemoveRoutine: (id: string) => void;
+  purgeOldDeleted: () => void;
   reorderRoutines: (ordered: Routine[]) => void;
   addGroup: (group: RoutineGroup) => void;
   updateGroup: (id: string, updates: Partial<RoutineGroup>) => void;
@@ -39,10 +43,34 @@ export const useRoutineStore = create<RoutineStore>()(
         })),
 
       removeRoutine: (id) =>
-        set((s) => ({ routines: s.routines.filter((r) => r.id !== id) })),
+        set((s) => ({
+          routines: s.routines.map((r) =>
+            r.id === id ? { ...r, deletedAt: Date.now() } : r,
+          ),
+        })),
 
       removeRoutines: (ids) =>
-        set((s) => ({ routines: s.routines.filter((r) => !ids.includes(r.id)) })),
+        set((s) => ({
+          routines: s.routines.map((r) =>
+            ids.includes(r.id) ? { ...r, deletedAt: Date.now() } : r,
+          ),
+        })),
+
+      undoRemoveRoutine: (id) =>
+        set((s) => ({
+          routines: s.routines.map((r) =>
+            r.id === id ? { ...r, deletedAt: undefined } : r,
+          ),
+        })),
+
+      purgeOldDeleted: () => {
+        const cutoff = Date.now() - DELETED_RETENTION_DAYS * 86_400_000;
+        set((s) => ({
+          routines: s.routines.filter(
+            (r) => !r.deletedAt || r.deletedAt > cutoff,
+          ),
+        }));
+      },
 
       reorderRoutines: (ordered) =>
         set({ routines: ordered.map((r, i) => ({ ...r, order: i })) }),
@@ -95,7 +123,7 @@ export const useRoutineStore = create<RoutineStore>()(
     {
       name: 'routine-store',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as Record<string, unknown>;
         if (version < 1) {
@@ -118,6 +146,9 @@ export const useRoutineStore = create<RoutineStore>()(
         if (version < 4) {
           const routines = (state.routines as Record<string, unknown>[]) ?? [];
           state.routines = routines.map((r) => ({ ...r, repeatInterval: r.repeatInterval ?? 1 }));
+        }
+        if (version < 5) {
+          // v5: soft delete — no migration needed, deletedAt is optional
         }
         return state as RoutineStore;
       },

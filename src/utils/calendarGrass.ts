@@ -21,6 +21,7 @@ export type DailyGrassActivity = {
 export function countTodosCompletedOnDate(todos: Todo[], dateStr: string): number {
   return todos.filter((t) => {
     if (!t.completedAt) return false;
+    if (t.deletedAt && dateStr >= localDateStr(new Date(t.deletedAt))) return false;
     return localDateStr(new Date(t.completedAt)) === dateStr;
   }).length;
 }

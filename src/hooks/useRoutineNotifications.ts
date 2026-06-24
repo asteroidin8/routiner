@@ -21,7 +21,7 @@ export function useRoutineNotifications() {
 
       await cancelNotificationsByPrefix(NOTIFICATION_ID.routinePrefix);
 
-      for (const routine of routines) {
+      for (const routine of routines.filter((r) => !r.deletedAt)) {
         if (!routine.reminderTime) continue;
 
         const [hStr, mStr] = routine.reminderTime.split(':');

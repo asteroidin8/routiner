@@ -17,7 +17,8 @@ const L = STATS_LABELS;
 
 export default function TodoDetailScreen() {
   const c = useThemeColors();
-  const { todos } = useTodoStore();
+  const allTodos = useTodoStore((s) => s.todos);
+  const todos = allTodos.filter((t) => !t.deletedAt);
 
   const completedTodos = todos.filter((t) => t.completedAt !== null).length;
   const activeTodos = todos.filter((t) => t.completedAt === null).length;

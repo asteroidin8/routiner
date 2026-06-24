@@ -25,7 +25,8 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function RoutineDetailScreen() {
   const c = useThemeColors();
-  const { routines } = useRoutineStore();
+  const allRoutines = useRoutineStore((s) => s.routines);
+  const routines = allRoutines.filter((r) => !r.deletedAt);
   const { getStreak, isCompleted } = useRoutineCompletionStore();
   const { user } = useAuth();
   const boards = useBoardStore((s) => s.boards);

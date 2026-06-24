@@ -120,7 +120,7 @@ export default function TodoScreen() {
   useTabScrollToTop(TAB_INDEX, scrollRef);
 
   const {
-    todos,
+    todos: allTodos,
     groups,
     addTodo,
     updateTodo,
@@ -135,6 +135,7 @@ export default function TodoScreen() {
     toggleGroupCollapsed,
     batchUpdateTodos,
   } = useTodoStore();
+  const todos = allTodos.filter((t) => !t.deletedAt);
   const isPro = useProStore((s) => s.isPro);
   const { seenHints, markHintSeen } = useSettingsStore();
 
@@ -326,7 +327,7 @@ export default function TodoScreen() {
     prevDragTargetRef.current = null;
     setIsDragging(true);
     setDragTargetGroupId(null);
-  }, []);
+  }, [setIsDragging, setDragTargetGroupId]);
 
   const handlePlaceholderIndexChange = useCallback((placeholderIndex: number) => {
     const items = dragItemsRef.current;
@@ -342,7 +343,7 @@ export default function TodoScreen() {
       prevDragTargetRef.current = targetId;
       setDragTargetGroupId(targetId);
     }
-  }, []);
+  }, [setDragTargetGroupId]);
 
   function handleUnifiedDragEnd({ data }: { data: ListItem[] }) {
     setIsDragging(false);

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
+import { useRoutineStore } from '@/stores/useRoutineStore';
 import { useTodoStore } from '@/stores/useTodoStore';
 import { localDateStr } from '@/utils/dateFormat';
 
@@ -22,8 +23,9 @@ function getMsUntilMidnight() {
  * 미완료 투두는 자동으로 다음 날로 이월(별도 처리 없음 — dueDate 없으면 오늘 목록에 계속 노출).
  */
 export function useMidnightArchive() {
-  const { lastArchiveDate, archiveCompletedTodos } = useTodoStore();
+  const { lastArchiveDate, archiveCompletedTodos, purgeOldDeleted: purgeTodos } = useTodoStore();
   const clearOldCompletions = useRoutineCompletionStore((s) => s.clearOldCompletions);
+  const purgeRoutines = useRoutineStore((s) => s.purgeOldDeleted);
 
   function checkAndArchive() {
     const today = getTodayStr();
@@ -31,6 +33,8 @@ export function useMidnightArchive() {
       archiveCompletedTodos(today);
     }
     clearOldCompletions();
+    purgeRoutines();
+    purgeTodos();
   }
 
   useEffect(() => {
