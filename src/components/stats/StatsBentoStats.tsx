@@ -30,7 +30,7 @@ function StatCard({ label, value, glow }: { label: string; value: string; glow?:
 
 /** 통계 — 연속 · 이번 달 · 달성률 */
 export function StatsBentoStats() {
-  const { routines } = useRoutineStore();
+  const routines = useRoutineStore((s) => s.routines);
   const { isCompleted } = useRoutineCompletionStore();
   const { user } = useAuth();
   const boardRoutines = useBoardStore((s) => s.routines);

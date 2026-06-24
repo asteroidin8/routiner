@@ -10,6 +10,8 @@ function nextPinOrder(todos: Todo[]): number {
   return todos.reduce((max, t) => (t.pinnedToHome ? Math.max(max, t.pinOrder) : max), -1) + 1;
 }
 
+const DELETED_RETENTION_DAYS = 400;
+
 type TodoStore = {
   todos: Todo[];
   groups: TodoGroup[];
@@ -19,6 +21,8 @@ type TodoStore = {
   completeTodo: (id: string) => void;
   uncompleteTodo: (id: string) => void;
   removeTodo: (id: string) => void;
+  undoRemoveTodo: (id: string) => void;
+  purgeOldDeleted: () => void;
   reorderTodos: (priority: TodoPriority, ordered: Todo[]) => void;
   toggleTodoHomePin: (id: string) => void;
   archiveCompletedTodos: (date: string) => void;
@@ -69,7 +73,28 @@ export const useTodoStore = create<TodoStore>()(
           todos: s.todos.map((t) => (t.id === id ? { ...t, completedAt: null } : t)),
         })),
 
-      removeTodo: (id) => set((s) => ({ todos: s.todos.filter((t) => t.id !== id) })),
+      removeTodo: (id) =>
+        set((s) => ({
+          todos: s.todos.map((t) =>
+            t.id === id ? { ...t, deletedAt: Date.now() } : t,
+          ),
+        })),
+
+      undoRemoveTodo: (id) =>
+        set((s) => ({
+          todos: s.todos.map((t) =>
+            t.id === id ? { ...t, deletedAt: undefined } : t,
+          ),
+        })),
+
+      purgeOldDeleted: () => {
+        const cutoff = Date.now() - DELETED_RETENTION_DAYS * 86_400_000;
+        set((s) => ({
+          todos: s.todos.filter(
+            (t) => !t.deletedAt || t.deletedAt > cutoff,
+          ),
+        }));
+      },
 
       reorderTodos: (priority, ordered) =>
         set((s) => ({
@@ -145,18 +170,23 @@ export const useTodoStore = create<TodoStore>()(
 
       removeTodos: (ids) =>
         set((s) => ({
-          todos: s.todos.filter((t) => !ids.includes(t.id)),
+          todos: s.todos.map((t) =>
+            ids.includes(t.id) ? { ...t, deletedAt: Date.now() } : t,
+          ),
         })),
     }),
     {
       name: 'todo-store',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>;
         if (version < 1) {
           const todos = (state.todos ?? []) as Record<string, unknown>[];
           state.todos = todos.map((t) => ({ ...t, section: t.section ?? null }));
+        }
+        if (version < 2) {
+          // v2: soft delete — no migration needed, deletedAt is optional
         }
         return state as TodoStore;
       },

@@ -120,7 +120,7 @@ export default function TodoScreen() {
   useTabScrollToTop(TAB_INDEX, scrollRef);
 
   const {
-    todos,
+    todos: allTodos,
     groups,
     addTodo,
     updateTodo,
@@ -128,6 +128,7 @@ export default function TodoScreen() {
     uncompleteTodo,
     removeTodo,
     removeTodos,
+    undoRemoveTodo,
     reorderTodos,
     addGroup,
     updateGroup,
@@ -135,6 +136,7 @@ export default function TodoScreen() {
     toggleGroupCollapsed,
     batchUpdateTodos,
   } = useTodoStore();
+  const todos = allTodos.filter((t) => !t.deletedAt);
   const isPro = useProStore((s) => s.isPro);
   const { seenHints, markHintSeen } = useSettingsStore();
 

@@ -19,6 +19,11 @@ export function toDateStr(date: Date) {
   return localDateStr(date);
 }
 
+function isActiveOnDate(item: { deletedAt?: number }, dateStr: string): boolean {
+  if (!item.deletedAt) return true;
+  return dateStr < localDateStr(new Date(item.deletedAt));
+}
+
 export function getRoutineProgressForDate(
   dateStr: string,
   dayOfWeek: number,
@@ -26,7 +31,9 @@ export function getRoutineProgressForDate(
   isCompleted: (routineId: string, date: string) => boolean,
 ) {
   const date = new Date(dateStr + 'T12:00:00');
-  const dayRoutines = routines.filter((r) => isRoutineScheduledForDate(r, date));
+  const dayRoutines = routines.filter(
+    (r) => isActiveOnDate(r, dateStr) && isRoutineScheduledForDate(r, date),
+  );
   if (dayRoutines.length === 0) {
     return { completed: 0, total: 0 };
   }

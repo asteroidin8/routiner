@@ -68,8 +68,10 @@ export default function StatsScreen() {
   useTabScrollToTop(TAB_INDEX, scrollRef);
 
   const { records, removeRecord, updateRecord } = useFastingStore();
-  const { routines } = useRoutineStore();
-  const { todos } = useTodoStore();
+  const allRoutines = useRoutineStore((s) => s.routines);
+  const routines = allRoutines.filter((r) => !r.deletedAt);
+  const allTodos = useTodoStore((s) => s.todos);
+  const todos = allTodos.filter((t) => !t.deletedAt);
   const { isCompleted } = useRoutineCompletionStore();
   const { profile } = useUserStore();
   const { cards } = useStatsCardStore();
@@ -187,7 +189,7 @@ export default function StatsScreen() {
     () => (user ? buildBoardRoutineData(boardRoutines, boardLogs, user.id) : undefined),
     [boardRoutines, boardLogs, user],
   );
-  const grassMap = buildMonthGrassMap(viewYear, viewMonth, routines, isCompleted, todos, boardData);
+  const grassMap = buildMonthGrassMap(viewYear, viewMonth, allRoutines, isCompleted, allTodos, boardData);
   const { gridRef, share } = useShareGrass();
 
   return (

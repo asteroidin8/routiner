@@ -72,6 +72,7 @@ export async function pushLocalToCloud(userId: string): Promise<{ error?: string
         sort_order: r.order,
         group_id: r.groupId ?? null,
         created_at: r.createdAt,
+        deleted_at: r.deletedAt ?? null,
         updated_at: now,
       })),
     );
@@ -108,6 +109,7 @@ export async function pushLocalToCloud(userId: string): Promise<{ error?: string
         pin_order: t.pinOrder,
         group_id: t.groupId ?? null,
         section: t.section ?? null,
+        deleted_at: t.deletedAt ?? null,
         updated_at: now,
       })),
     );
@@ -240,6 +242,7 @@ export async function pullCloudToLocal(userId: string): Promise<{ error?: string
           createdAt: r.created_at,
           order: r.sort_order,
           groupId: (r as Record<string, unknown>).group_id as string | null ?? null,
+          deletedAt: ((r as Record<string, unknown>).deleted_at as number | null) ?? undefined,
         }))
         .sort((a, b) => a.order - b.order),
     });
@@ -274,6 +277,7 @@ export async function pullCloudToLocal(userId: string): Promise<{ error?: string
           pinOrder: t.pin_order,
           groupId: (t as Record<string, unknown>).group_id as string | null ?? null,
           section: ((t as Record<string, unknown>).section as string | null) ?? null,
+          deletedAt: ((t as Record<string, unknown>).deleted_at as number | null) ?? undefined,
         }))
         .sort((a, b) => a.order - b.order),
     });

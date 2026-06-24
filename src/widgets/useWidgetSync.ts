@@ -28,9 +28,10 @@ function buildWidgetData(
   const todayStr = localDateStr(now);
   const streak = getRoutineStreakDays(routines, isCompleted);
 
-  const todayRoutines = routines.filter((r) => isRoutineScheduledForDate(r, now));
+  const activeRoutines = routines.filter((r) => !r.deletedAt);
+  const todayRoutines = activeRoutines.filter((r) => isRoutineScheduledForDate(r, now));
   const completedRoutines = todayRoutines.filter((r) => isCompleted(r.id, todayStr));
-  const activeTodos = todos.filter((t) => !t.archivedDate);
+  const activeTodos = todos.filter((t) => !t.deletedAt && !t.archivedDate);
   const completedTodos = activeTodos.filter((t) => t.completedAt !== null);
 
   const routineCompleted = completedRoutines.length;

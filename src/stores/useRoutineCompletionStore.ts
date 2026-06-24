@@ -7,7 +7,7 @@ import { toDateStr } from '@/utils/homeDailyBoard';
 import { isRoutineScheduledForDate } from '@/utils/routineSchedule';
 
 const MAX_STREAK_DAYS = 365;
-const COMPLETION_RETENTION_DAYS = 30;
+const COMPLETION_RETENTION_DAYS = 400;
 
 function makeKey(routineId: string, date: string) {
   return `${date}:${routineId}`;

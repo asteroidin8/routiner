@@ -23,6 +23,7 @@ export type Todo = {
   pinOrder: number;
   groupId: string | null;
   section: string | null;
+  deletedAt?: number;
 };
 
 // ── Routine ──
@@ -42,6 +43,7 @@ export type Routine = {
   createdAt: number;
   order: number;
   groupId: string | null;
+  deletedAt?: number;
 };
 
 // ── Fasting ──

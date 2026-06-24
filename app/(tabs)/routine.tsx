@@ -74,12 +74,13 @@ export default function RoutineScreen() {
   useTabScrollToTop(TAB_INDEX, scrollRef);
 
   const {
-    routines,
+    routines: allRoutines,
     groups,
     addRoutine,
     updateRoutine,
     removeRoutine,
     removeRoutines,
+    undoRemoveRoutine,
     reorderRoutines,
     addGroup,
     updateGroup,
@@ -87,6 +88,7 @@ export default function RoutineScreen() {
     toggleGroupCollapsed,
     batchUpdateRoutines,
   } = useRoutineStore();
+  const routines = allRoutines.filter((r) => !r.deletedAt);
   const { toggleCompletion, isCompleted } = useRoutineCompletionStore();
   const isPro = useProStore((s) => s.isPro);
   const { seenHints, markHintSeen } = useSettingsStore();
