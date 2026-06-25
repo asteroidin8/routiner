@@ -415,6 +415,7 @@ export function RoutineModal({ visible, initial, onSave, onDelete, onClose }: Pr
         visible={timePickerVisible}
         selectedTime={reminderTime}
         title="루틴 알림 시간"
+        timeFormat={timeFormat}
         onConfirm={(time) => {
           setReminderTime(time);
           setTimePickerVisible(false);
