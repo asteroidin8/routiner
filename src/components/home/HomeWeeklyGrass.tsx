@@ -32,8 +32,9 @@ export function HomeWeeklyGrass() {
   const grassColor = useSettingsStore((s) => s.grassColor);
   const grassShape = useSettingsStore((s) => s.grassShape);
   const grassHex = getGrassColor(grassColor);
-  const { routines } = useRoutineStore();
-  const { isCompleted } = useRoutineCompletionStore();
+  const routines = useRoutineStore((s) => s.routines);
+  useRoutineCompletionStore((s) => s.completions);
+  const { isCompleted } = useRoutineCompletionStore.getState();
 
   const todayStr = toDateStr(new Date());
   const weekDots = getWeekDayDots(routines, isCompleted);

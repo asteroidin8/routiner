@@ -71,24 +71,18 @@ export default function RoutineScreen() {
   const scrollRef = useRef<ScrollView>(null);
   useTabScrollToTop(TAB_INDEX, scrollRef);
 
-  const {
-    routines: allRoutines,
-    groups,
-    addRoutine,
-    updateRoutine,
-    removeRoutine,
-    removeRoutines,
-    reorderRoutines,
-    addGroup,
-    updateGroup,
-    removeGroup,
-    toggleGroupCollapsed,
-    batchUpdateRoutines,
-  } = useRoutineStore();
-  const routines = allRoutines.filter((r) => !r.deletedAt);
-  const { toggleCompletion, isCompleted } = useRoutineCompletionStore();
+  const allRoutines = useRoutineStore((s) => s.routines);
+  const groups = useRoutineStore((s) => s.groups);
+  const completions = useRoutineCompletionStore((s) => s.completions);
   const isPro = useProStore((s) => s.isPro);
-  const { seenHints, markHintSeen } = useSettingsStore();
+  const seenHints = useSettingsStore((s) => s.seenHints);
+  const {
+    addRoutine, updateRoutine, removeRoutine, removeRoutines,
+    reorderRoutines, addGroup, updateGroup, removeGroup, toggleGroupCollapsed, batchUpdateRoutines,
+  } = useRoutineStore.getState();
+  const { toggleCompletion, isCompleted } = useRoutineCompletionStore.getState();
+  const { markHintSeen } = useSettingsStore.getState();
+  const routines = useMemo(() => allRoutines.filter((r) => !r.deletedAt), [allRoutines]);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editTarget, setEditTarget] = useState<Routine | null>(null);
@@ -116,10 +110,10 @@ export default function RoutineScreen() {
   const todayRoutines = useMemo(() => ungroupedRoutines.filter((r) => isRoutineScheduledForDate(r, todayDate)), [ungroupedRoutines, todayDate]);
   const otherRoutines = useMemo(() => ungroupedRoutines.filter((r) => !isRoutineScheduledForDate(r, todayDate)), [ungroupedRoutines, todayDate]);
 
-  const allTodayComplete = (() => {
+  const allTodayComplete = useMemo(() => {
     const todayAll = routines.filter((r) => isRoutineScheduledForDate(r, todayDate));
     return todayAll.length > 0 && todayAll.every((r) => isCompleted(r.id, todayStr));
-  })();
+  }, [routines, todayDate, todayStr, completions]);
 
   const showSwipeHint = !seenHints.swipeActions && routines.length > 0;
 
@@ -266,7 +260,7 @@ export default function RoutineScreen() {
     }
 
     return items;
-  }, [hasGroups, sortedGroups, allRoutinesSorted, ungroupedRoutines, todayDate, todayStr, isCompleted]);
+  }, [hasGroups, sortedGroups, allRoutinesSorted, ungroupedRoutines, todayDate, todayStr, completions]);
 
   const dragItemsRef = useRef(dragItems);
   dragItemsRef.current = dragItems;

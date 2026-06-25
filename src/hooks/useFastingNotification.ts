@@ -63,8 +63,10 @@ async function showFastingNotification(elapsed: number, goalHours: number) {
 }
 
 export function useFastingNotification() {
-  const { status, startedAt, goalHours } = useFastingStore();
-  const { foregroundServiceEnabled } = useSettingsStore();
+  const status = useFastingStore((s) => s.status);
+  const startedAt = useFastingStore((s) => s.startedAt);
+  const goalHours = useFastingStore((s) => s.goalHours);
+  const foregroundServiceEnabled = useSettingsStore((s) => s.foregroundServiceEnabled);
   const lastSnapshotRef = useRef<string | null>(null);
 
   useEffect(() => {
