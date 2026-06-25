@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -34,10 +34,12 @@ type Props = {
 export function DailySummaryRow({ onRoutinePress, onTodoPress }: Props) {
   const c = useThemeColors();
   const allRoutines = useRoutineStore((s) => s.routines);
-  const routines = allRoutines.filter((r) => !r.deletedAt);
-  const { todos: allTodos, completeTodo } = useTodoStore();
-  const todos = allTodos.filter((t) => !t.deletedAt);
-  const { isCompleted, toggleCompletion } = useRoutineCompletionStore();
+  const allTodos = useTodoStore((s) => s.todos);
+  const completions = useRoutineCompletionStore((s) => s.completions);
+  const { isCompleted, toggleCompletion } = useRoutineCompletionStore.getState();
+  const { completeTodo } = useTodoStore.getState();
+  const routines = useMemo(() => allRoutines.filter((r) => !r.deletedAt), [allRoutines]);
+  const todos = useMemo(() => allTodos.filter((t) => !t.deletedAt), [allTodos]);
 
   const today = getTodayDate();
   const now = new Date();

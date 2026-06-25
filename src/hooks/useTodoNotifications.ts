@@ -6,8 +6,8 @@ import { useTodoStore } from '@/stores/useTodoStore';
 import { cancelNotificationsByPrefix, NOTIFICATION_ID } from '@/utils/notifications';
 
 export function useTodoNotifications() {
-  const { todos } = useTodoStore();
-  const { todoNotificationsEnabled } = useSettingsStore();
+  const todos = useTodoStore((s) => s.todos);
+  const todoNotificationsEnabled = useSettingsStore((s) => s.todoNotificationsEnabled);
 
   useEffect(() => {
     async function sync() {

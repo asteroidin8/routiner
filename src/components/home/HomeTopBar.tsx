@@ -14,7 +14,8 @@ const ZNDI_SYMBOL = require('../../../assets/zndi-symbol.png');
 export function HomeTopBar() {
   const c = useThemeColors();
   const routines = useRoutineStore((s) => s.routines);
-  const { isCompleted } = useRoutineCompletionStore();
+  useRoutineCompletionStore((s) => s.completions);
+  const { isCompleted } = useRoutineCompletionStore.getState();
   const streak = getRoutineStreakDays(routines, isCompleted);
 
   return (

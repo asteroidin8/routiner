@@ -6,8 +6,8 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { cancelNotificationsByPrefix, NOTIFICATION_ID } from '@/utils/notifications';
 
 export function useRoutineNotifications() {
-  const { routines } = useRoutineStore();
-  const { routineNotificationsEnabled } = useSettingsStore();
+  const routines = useRoutineStore((s) => s.routines);
+  const routineNotificationsEnabled = useSettingsStore((s) => s.routineNotificationsEnabled);
 
   useEffect(() => {
     async function sync() {
