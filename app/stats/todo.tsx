@@ -1,7 +1,9 @@
-import { ScrollView, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
+import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
@@ -15,26 +17,76 @@ import { useTodoStore } from '@/stores/useTodoStore';
 
 const L = STATS_LABELS;
 
+type Period = 'weekly' | 'monthly';
+
+function getMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getPeriodRange(period: Period, offset: number) {
+  const now = new Date();
+  if (period === 'weekly') {
+    const monday = getMonday(now);
+    monday.setDate(monday.getDate() + offset * 7);
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6);
+    const label = `${monday.getMonth() + 1}/${monday.getDate()} ~ ${sunday.getMonth() + 1}/${sunday.getDate()}`;
+    const end = new Date(monday);
+    end.setDate(end.getDate() + 7);
+    return { start: monday, end, label };
+  }
+  const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 1);
+  const label = `${start.getFullYear()}년 ${start.getMonth() + 1}월`;
+  return { start, end, label };
+}
+
 export default function TodoDetailScreen() {
   const c = useThemeColors();
   const allTodos = useTodoStore((s) => s.todos);
   const todos = allTodos.filter((t) => !t.deletedAt);
 
-  const completedTodos = todos.filter((t) => t.completedAt !== null).length;
-  const activeTodos = todos.filter((t) => t.completedAt === null).length;
-  const totalHighPriority = todos.filter((t) => t.priority === 'high').length;
-  const completedHighPriority = todos.filter((t) => t.priority === 'high' && !!t.completedAt).length;
-  const completionRate = todos.length > 0 ? Math.round((completedTodos / todos.length) * 100) : 0;
+  const [period, setPeriod] = useState<Period>('weekly');
+  const [offset, setOffset] = useState(0);
 
-  const byPriority = (['high', 'medium', 'low'] as const).map((p) => {
-    const total = todos.filter((t) => t.priority === p).length;
-    const done = todos.filter((t) => t.priority === p && !!t.completedAt).length;
+  const { start, end, label: periodLabel } = getPeriodRange(period, offset);
+  const startTs = start.getTime();
+  const endTs = end.getTime();
+
+  const completedInPeriod = todos.filter(
+    (t) => t.completedAt !== null && t.completedAt >= startTs && t.completedAt < endTs,
+  );
+  const activeTodos = todos.filter((t) => t.completedAt === null);
+  const isCurrent = offset === 0;
+  const totalForRate = isCurrent ? completedInPeriod.length + activeTodos.length : completedInPeriod.length;
+  const completionRate = totalForRate > 0 ? Math.round((completedInPeriod.length / totalForRate) * 100) : 0;
+
+  const highInPeriod = completedInPeriod.filter((t) => t.priority === 'high').length;
+  const totalHigh = isCurrent
+    ? todos.filter((t) => t.priority === 'high' && (t.completedAt === null || (t.completedAt >= startTs && t.completedAt < endTs))).length
+    : completedInPeriod.filter((t) => t.priority === 'high').length;
+
+  const byPriority = (['high', 'mid', 'low'] as const).map((p) => {
+    const done = completedInPeriod.filter((t) => t.priority === p).length;
+    const total = isCurrent
+      ? todos.filter((t) => t.priority === p && (t.completedAt === null || (t.completedAt !== null && t.completedAt >= startTs && t.completedAt < endTs))).length
+      : done;
     return { priority: p, total, done };
   });
 
-  const priorityLabel = { high: '높음', medium: '보통', low: '낮음' } as const;
-  const priorityColor = (p: 'high' | 'medium' | 'low') =>
-    p === 'high' ? c.priorityHigh : p === 'medium' ? c.priorityMid : c.priorityLow;
+  const priorityLabel = { high: '높음', mid: '보통', low: '낮음' } as const;
+  const priorityColor = (p: 'high' | 'mid' | 'low') =>
+    p === 'high' ? c.priorityHigh : p === 'mid' ? c.priorityMid : c.priorityLow;
+
+  function switchPeriod(p: Period) {
+    setPeriod(p);
+    setOffset(0);
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
@@ -47,29 +99,70 @@ export default function TodoDetailScreen() {
         }}
         showsVerticalScrollIndicator={false}
       >
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          {(['weekly', 'monthly'] as const).map((p) => (
+            <Pressable
+              key={p}
+              onPress={() => switchPeriod(p)}
+              style={{
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+                borderRadius: 8,
+                backgroundColor: period === p ? c.primary : c.surfaceMuted,
+              }}
+            >
+              <AppText
+                variant="caption"
+                style={{ color: period === p ? '#fff' : c.inkSecondary, fontWeight: '600' }}
+              >
+                {p === 'weekly' ? '주간' : '월간'}
+              </AppText>
+            </Pressable>
+          ))}
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          <Pressable onPress={() => setOffset((o) => o - 1)} hitSlop={8} style={{ padding: 4 }}>
+            <AppIcon name="ChevronLeft" size={18} color={c.inkSecondary} />
+          </Pressable>
+          <AppText variant="body" style={{ fontWeight: '700', minWidth: 120, textAlign: 'center' }}>
+            {periodLabel}
+          </AppText>
+          <Pressable
+            onPress={() => setOffset((o) => o + 1)}
+            hitSlop={8}
+            style={{ padding: 4, opacity: isCurrent ? 0.3 : 1 }}
+            disabled={isCurrent}
+          >
+            <AppIcon name="ChevronRight" size={18} color={c.inkSecondary} />
+          </Pressable>
+        </View>
+
         <View style={{ flexDirection: 'row', gap: spacing.gap }}>
-          <StatsSummaryCard label={L.completionRate} value={`${completionRate}%`} />
+          <StatsSummaryCard label={L.completionRate} value={isCurrent ? `${completionRate}%` : `${completedInPeriod.length}${L.countUnit}`} />
           <StatsSummaryCard
             label={L.importantTodos}
-            value={totalHighPriority > 0 ? `${completedHighPriority}/${totalHighPriority}` : '-'}
+            value={totalHigh > 0 ? `${highInPeriod}/${totalHigh}` : '-'}
           />
         </View>
 
         <View style={{ flexDirection: 'row', gap: spacing.gap }}>
-          <StatsSummaryCard label="진행 중" value={`${activeTodos}${L.countUnit}`} />
-          <StatsSummaryCard label={L.completed} value={`${completedTodos}${L.countUnit}`} />
+          {isCurrent && (
+            <StatsSummaryCard label="진행 중" value={`${activeTodos.length}${L.countUnit}`} />
+          )}
+          <StatsSummaryCard label={L.completed} value={`${completedInPeriod.length}${L.countUnit}`} />
         </View>
 
-        {todos.length > 0 && (
+        {isCurrent && totalForRate > 0 && (
           <View style={{ gap: 8 }}>
             <AppText variant="caption" tone="tertiary">
-              전체 달성률
+              {period === 'weekly' ? '주간' : '월간'} 달성률
             </AppText>
             <ProgressBar value={completionRate} height={8} />
           </View>
         )}
 
-        {todos.length > 0 ? (
+        {completedInPeriod.length > 0 || (isCurrent && todos.length > 0) ? (
           <View style={{ gap: 12 }}>
             <AppText variant="body" style={{ fontWeight: '700' }}>
               우선순위별
