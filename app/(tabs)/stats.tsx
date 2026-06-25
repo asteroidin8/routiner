@@ -96,8 +96,6 @@ export default function StatsScreen() {
     })),
   );
 
-  const completedFasts = records.filter((r) => r.result === 'completed').length;
-
   const boardTotal = countBoardRoutinesTotal(boardRoutines);
   const todayDateStr = localDateStr(now);
 
@@ -109,8 +107,12 @@ export default function StatsScreen() {
   const totalTodayRoutines = todayRoutines.length + boardTotal;
   const completedRoutinesToday = personalCompletedToday + boardCompletedToday;
 
-  const completedTodos = todos.filter((t) => t.completedAt !== null).length;
-  const completionRate = todos.length > 0 ? Math.round((completedTodos / todos.length) * 100) : 0;
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const todayStartTs = todayStart.getTime();
+  const completedTodayTodos = todos.filter((t) => t.completedAt !== null && t.completedAt >= todayStartTs).length;
+  const activeTodos = todos.filter((t) => t.completedAt === null).length;
+  const totalTodayTodos = activeTodos + completedTodayTodos;
 
   const isDataEmpty = records.length === 0 && routines.length === 0 && todos.length === 0 && boardTotal === 0;
 
@@ -129,7 +131,7 @@ export default function StatsScreen() {
             key="fasting"
             icon="Timer"
             title={L.sectionFasting}
-            metric={`${completedFasts}${L.timesUnit}`}
+            metric={`기록 ${records.length}${L.timesUnit}`}
             onPress={() => router.push('/stats/fasting')}
           />
         );
@@ -149,7 +151,7 @@ export default function StatsScreen() {
             key="todo"
             icon="ListTodo"
             title={L.sectionTodo}
-            metric={`${completionRate}%`}
+            metric={`${completedTodayTodos}/${totalTodayTodos}${L.countUnit}`}
             onPress={() => router.push('/stats/todo')}
           />
         );

@@ -1,16 +1,26 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { DrumPicker } from './DrumPicker';
+import { DrumPicker, type DrumItem } from './DrumPicker';
 import { SheetModal, SheetPrimaryButton } from './SheetModal';
 import { spacing } from '@/constants/spacing';
 
-const HOURS = Array.from({ length: 24 }, (_, i) => ({
+const HOURS_24: DrumItem[] = Array.from({ length: 24 }, (_, i) => ({
   value: i,
   label: `${String(i).padStart(2, '0')}시`,
 }));
 
-const MINUTES = Array.from({ length: 12 }, (_, i) => ({
+const HOURS_12: DrumItem[] = Array.from({ length: 12 }, (_, i) => ({
+  value: i,
+  label: `${i === 0 ? 12 : i}시`,
+}));
+
+const AM_PM_ITEMS: DrumItem[] = [
+  { value: 0, label: '오전' },
+  { value: 1, label: '오후' },
+];
+
+const MINUTES: DrumItem[] = Array.from({ length: 12 }, (_, i) => ({
   value: i * 5,
   label: `${String(i * 5).padStart(2, '0')}분`,
 }));
@@ -19,6 +29,7 @@ type Props = {
   visible: boolean;
   selectedTime: string | null;
   title?: string;
+  timeFormat?: '12h' | '24h';
   onConfirm: (time: string | null) => void;
   onClose: () => void;
 };
@@ -41,6 +52,7 @@ export function TimePickerModal({
   visible,
   selectedTime,
   title = '알림 시간',
+  timeFormat = '24h',
   onConfirm,
   onClose,
 }: Props) {
@@ -55,6 +67,10 @@ export function TimePickerModal({
       setMinute(snapMinute(next.minute));
     }
   }, [visible, selectedTime]);
+
+  const is12h = timeFormat === '12h';
+  const ampm = Math.floor(hour / 12);
+  const hour12 = hour % 12;
 
   function handleConfirm() {
     onConfirm(`${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
@@ -77,8 +93,27 @@ export function TimePickerModal({
       }
     >
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-        <DrumPicker items={HOURS} selected={hour} onSelect={setHour} />
-        <DrumPicker items={MINUTES} selected={minute} onSelect={setMinute} />
+        {is12h ? (
+          <>
+            <DrumPicker
+              items={AM_PM_ITEMS}
+              selected={ampm}
+              onSelect={(v) => setHour(v * 12 + hour12)}
+              width={64}
+            />
+            <DrumPicker
+              items={HOURS_12}
+              selected={hour12}
+              onSelect={(v) => setHour(ampm * 12 + v)}
+            />
+            <DrumPicker items={MINUTES} selected={minute} onSelect={setMinute} />
+          </>
+        ) : (
+          <>
+            <DrumPicker items={HOURS_24} selected={hour} onSelect={setHour} />
+            <DrumPicker items={MINUTES} selected={minute} onSelect={setMinute} />
+          </>
+        )}
       </View>
     </SheetModal>
   );

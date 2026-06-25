@@ -316,12 +316,15 @@ C  ??????????????  41%
 | 11 | board/[id].tsx 컴포넌트 분할 | `src/components/board/MembersTab.tsx`, `RoutinesTab.tsx` | 870줄 → ~620줄, MembersTab·RoutinesTab 분리 |
 | 12 | row→model 매퍼 공통화 | `src/utils/rowMappers.ts` | `routineFromRow`/`todoFromRow` — useRealtimeSync + cloudSync 공유 |
 | 13 | GrassCell 공통 컴포넌트 | `src/components/board/GrassCell.tsx` | 잔디 셀 렌더링 통일, board/[id].tsx + friend.tsx에서 사용 |
+| 14 | SafeAreaProvider + Zustand 선택적 구독 | `app/_layout.tsx`, 탭 화면 전체, hooks | SafeAreaProvider 추가 + 전체 store→선택적 selector + useMemo 파생 배열 — 깜박임·느림 해결 |
+| 15 | TimePickerModal 12h 대응 | `src/components/TimePickerModal.tsx` | 12시간제 설정 시 3열 피커 (오전/오후 > 시 > 분), 내부 24h 변환 유지 |
+| 16 | Stats 단식 횟수 → 전체 시도 | `app/(tabs)/stats.tsx` | completedFasts → records.length, 메인 카드 "기록 N회" 표시 |
+| 17 | Stats 할일 카드 일간 메트릭 | `app/(tabs)/stats.tsx` | 전체 달성률% → 오늘 완료/잔여 개수 (일간 기준) |
+| 18 | Stats 할일 상세 기간 필터 | `app/stats/todo.tsx` | 주간/월간 탭 + 날짜 네비게이션 + 기간별 달성률·우선순위 필터 |
+| 19 | 할일 우선순위 타입 버그 수정 | `app/stats/todo.tsx` | `'medium'` → `'mid'` (TodoPriority 타입과 불일치 수정) |
 
 ### 미진행 리팩토링 / 개선 과제
 
 | # | 항목 | 파일 | 설명 |
 |---|------|------|------|
-| 1 | 설정 시간 형식 AM/PM 반영 | `TimePickerModal` 관련 | 12시간제 선택 시 휠피커 3열 구조 (오전/오후 > 시 > 분) |
-| 2 | Stats 카드 기간 기준 재설계 | `app/(tabs)/stats.tsx`, `app/stats/` | 메인 카드 = 일간, 상세 페이지 = 주간/월간 + 기간 필터 + 날짜 범위 표시 |
-| 3 | Stats 단식 횟수 기준 변경 | `app/(tabs)/stats.tsx` | 완료만 → 전체 시도 횟수("기록 N회") |
-| 4 | 루틴/할일 상세 통계 페이지 통일 | `app/stats/routine.tsx`, `app/stats/todo.tsx` | 두 상세 페이지 구조 일관성 (기간 필터, 날짜 범위 표시) |
+| 1 | 루틴 상세 통계 기간 필터 추가 | `app/stats/routine.tsx` | 할일 상세와 동일한 주간/월간 필터 + 날짜 네비게이션 구조 통일 |
