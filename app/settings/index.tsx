@@ -105,6 +105,12 @@ export default function MyScreen() {
     return () => clearInterval(timer);
   }, [otpCooldown > 0]);
 
+  useEffect(() => {
+    if (otpSent && otp.length === 6 && !busy && otpAttempts < OTP_MAX_ATTEMPTS) {
+      void handleVerifyOtp();
+    }
+  }, [otp]);
+
   async function handleGoogle() {
     setBusy(true);
     try {
