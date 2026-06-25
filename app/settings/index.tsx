@@ -7,12 +7,15 @@ import * as Notifications from 'expo-notifications';
 import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { ProgressBar } from '@/components/ProgressBar';
+import { QRModal } from '@/components/QRModal';
 import { DangerRow, GroupCard, InsetDivider, Row } from '@/components/settings/MyScreenUI';
 import { radius, spacing } from '@/constants/spacing';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { appAlert } from '@/stores/useAlertStore';
+import { useAvatarStore } from '@/stores/useAvatarStore';
 import { useProStore } from '@/stores/useProStore';
+import { getAvatarById } from '@/constants/avatars';
 import { getAvatarColor, getDisplayName, getInitial } from '@/utils/avatarColor';
 import type { ThemeMode, TimeFormat } from '@/stores/useSettingsStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -42,6 +45,8 @@ export default function MyScreen() {
   const c = useThemeColors();
   const { themeMode, setThemeMode, timeFormat, setTimeFormat } = useSettingsStore();
   const { isPro } = useProStore();
+  const equippedId = useAvatarStore((s) => s.equippedId);
+  const equippedAvatar = equippedId ? getAvatarById(equippedId) : undefined;
   const { configured, loading, user, signInGoogle, sendEmailOtp, verifyEmailOtp, signOut } = useAuth();
   const { profile, setNickname } = useUserStore();
   const allRoutines = useRoutineStore((s) => s.routines);
@@ -52,6 +57,7 @@ export default function MyScreen() {
   const grassLevel = getGrassLevel(totalGrass);
 
   const [busy, setBusy] = useState(false);
+  const [showProfileQR, setShowProfileQR] = useState(false);
   const [editingNickname, setEditingNickname] = useState(false);
   const [nicknameInput, setNicknameInput] = useState(profile.nickname ?? '');
   const [nicknameError, setNicknameError] = useState<string | null>(null);
@@ -196,20 +202,25 @@ export default function MyScreen() {
         {/* ── 프로필 Hero ── */}
         {configured && !loading && user ? (
           <View style={{ alignItems: 'center', gap: spacing.sm }}>
-            <View
+            <Pressable
+              onPress={() => router.push('/settings/avatar-collection')}
               style={{
                 width: 56,
                 height: 56,
                 borderRadius: 28,
-                backgroundColor: getAvatarColor(user.id),
+                backgroundColor: equippedAvatar ? equippedAvatar.bgColor : getAvatarColor(user.id),
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <AppText variant="title" style={{ color: '#fff', fontWeight: '700' }}>
-                {getInitial(getDisplayName(profile.nickname, user.id))}
-              </AppText>
-            </View>
+              {equippedAvatar ? (
+                <AppText style={{ fontSize: 30 }}>{equippedAvatar.emoji}</AppText>
+              ) : (
+                <AppText variant="title" style={{ color: '#fff', fontWeight: '700' }}>
+                  {getInitial(getDisplayName(profile.nickname, user.id))}
+                </AppText>
+              )}
+            </Pressable>
             {editingNickname ? (
               <View style={{ alignItems: 'center', gap: spacing.xs }}>
                 <TextInput
@@ -271,6 +282,25 @@ export default function MyScreen() {
                 </AppText>
               </View>
             )}
+
+            <Pressable
+              onPress={() => setShowProfileQR(true)}
+              hitSlop={8}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: spacing.xs,
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.sm,
+                borderRadius: radius.md,
+                backgroundColor: c.surfaceSubtle,
+                borderWidth: 1,
+                borderColor: c.border,
+              }}
+            >
+              <AppIcon name="QrCode" size={16} color={c.inkTertiary} />
+              <AppText variant="caption" tone="tertiary">내 QR 코드</AppText>
+            </Pressable>
           </View>
         ) : configured && !loading && !user ? (
           <View style={{ alignItems: 'center', gap: spacing.md }}>
@@ -379,6 +409,8 @@ export default function MyScreen() {
 
         {/* ── 테마 상점 · 멤버십 ── */}
         <GroupCard>
+          <Row label="식물 도감" icon="Leaf" onPress={() => router.push('/settings/avatar-collection')} />
+          <InsetDivider />
           <Row label="테마 상점" icon="Palette" onPress={() => router.push('/settings/theme-shop')} />
           <InsetDivider />
           <Row label="멤버십" icon="Crown" value={isPro ? 'Pro' : undefined} onPress={() => router.push('/settings/membership')} />
@@ -407,6 +439,16 @@ export default function MyScreen() {
         </GroupCard>
       </ScrollView>
 
+      {user && (
+        <QRModal
+          visible={showProfileQR}
+          onClose={() => setShowProfileQR(false)}
+          title="내 프로필"
+          subtitle="친구가 이 QR을 스캔하면 나를 팔로우할 수 있어요"
+          value={`zndi://follow?userId=${user.id}`}
+          copyLabel={profile.nickname ?? getDisplayName(null, user.id)}
+        />
+      )}
     </SafeAreaView>
   );
 }
