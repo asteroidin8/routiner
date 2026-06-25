@@ -23,7 +23,8 @@ function getMsUntilMidnight() {
  * 미완료 투두는 자동으로 다음 날로 이월(별도 처리 없음 — dueDate 없으면 오늘 목록에 계속 노출).
  */
 export function useMidnightArchive() {
-  const { lastArchiveDate, archiveCompletedTodos, purgeOldDeleted: purgeTodos } = useTodoStore();
+  const lastArchiveDate = useTodoStore((s) => s.lastArchiveDate);
+  const { archiveCompletedTodos, purgeOldDeleted: purgeTodos } = useTodoStore.getState();
   const clearOldCompletions = useRoutineCompletionStore((s) => s.clearOldCompletions);
   const purgeRoutines = useRoutineStore((s) => s.purgeOldDeleted);
 

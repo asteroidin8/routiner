@@ -66,17 +66,19 @@ export default function StatsScreen() {
   const scrollRef = useRef<ScrollView>(null);
   useTabScrollToTop(TAB_INDEX, scrollRef);
 
-  const { records, removeRecord, updateRecord } = useFastingStore();
+  const records = useFastingStore((s) => s.records);
   const allRoutines = useRoutineStore((s) => s.routines);
-  const routines = allRoutines.filter((r) => !r.deletedAt);
   const allTodos = useTodoStore((s) => s.todos);
-  const todos = allTodos.filter((t) => !t.deletedAt);
-  const { isCompleted } = useRoutineCompletionStore();
-  const { profile } = useUserStore();
-  const { cards } = useStatsCardStore();
+  const completions = useRoutineCompletionStore((s) => s.completions);
+  const profile = useUserStore((s) => s.profile);
+  const cards = useStatsCardStore((s) => s.cards);
   const { user } = useAuth();
   const boardRoutines = useBoardStore((s) => s.routines);
   const boardLogs = useBoardStore((s) => s.logs);
+  const { removeRecord, updateRecord } = useFastingStore.getState();
+  const { isCompleted } = useRoutineCompletionStore.getState();
+  const routines = useMemo(() => allRoutines.filter((r) => !r.deletedAt), [allRoutines]);
+  const todos = useMemo(() => allTodos.filter((t) => !t.deletedAt), [allTodos]);
 
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());

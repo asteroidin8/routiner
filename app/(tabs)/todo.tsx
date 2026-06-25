@@ -118,25 +118,16 @@ export default function TodoScreen() {
   const scrollRef = useRef<ScrollView>(null);
   useTabScrollToTop(TAB_INDEX, scrollRef);
 
-  const {
-    todos: allTodos,
-    groups,
-    addTodo,
-    updateTodo,
-    completeTodo,
-    uncompleteTodo,
-    removeTodo,
-    removeTodos,
-    reorderTodos,
-    addGroup,
-    updateGroup,
-    removeGroup,
-    toggleGroupCollapsed,
-    batchUpdateTodos,
-  } = useTodoStore();
-  const todos = allTodos.filter((t) => !t.deletedAt);
+  const allTodos = useTodoStore((s) => s.todos);
+  const groups = useTodoStore((s) => s.groups);
   const isPro = useProStore((s) => s.isPro);
-  const { seenHints, markHintSeen } = useSettingsStore();
+  const seenHints = useSettingsStore((s) => s.seenHints);
+  const {
+    addTodo, updateTodo, completeTodo, uncompleteTodo, removeTodo, removeTodos,
+    reorderTodos, addGroup, updateGroup, removeGroup, toggleGroupCollapsed, batchUpdateTodos,
+  } = useTodoStore.getState();
+  const { markHintSeen } = useSettingsStore.getState();
+  const todos = useMemo(() => allTodos.filter((t) => !t.deletedAt), [allTodos]);
 
   const [filter, setFilter] = useState<TabFilter>('active');
   const [addModalVisible, setAddModalVisible] = useState(false);
@@ -152,13 +143,13 @@ export default function TodoScreen() {
   const enterEditMode = useCallback(() => { _enterEditMode(); setTabBarVisible(false); }, [_enterEditMode, setTabBarVisible]);
   const exitEditMode = useCallback(() => { _exitEditMode(); setTabBarVisible(true); }, [_exitEditMode, setTabBarVisible]);
 
-  const activeTodos = todos.filter((t) => !t.completedAt);
-  const completedTodos = todos.filter((t) => !!t.completedAt);
+  const activeTodos = useMemo(() => todos.filter((t) => !t.completedAt), [todos]);
+  const completedTodos = useMemo(() => todos.filter((t) => !!t.completedAt), [todos]);
   const showSwipeHint = !seenHints.swipeActions && todos.length > 0;
 
-  const sortedGroups = [...groups].sort((a, b) => a.order - b.order);
+  const sortedGroups = useMemo(() => [...groups].sort((a, b) => a.order - b.order), [groups]);
   const groupIds = useMemo(() => new Set(groups.map((g) => g.id)), [groups]);
-  const ungroupedActive = activeTodos.filter((t) => !t.groupId || !groupIds.has(t.groupId));
+  const ungroupedActive = useMemo(() => activeTodos.filter((t) => !t.groupId || !groupIds.has(t.groupId)), [activeTodos, groupIds]);
   const hasGroups = groups.length > 0;
 
   const visibleTodoIds = useMemo(() => {

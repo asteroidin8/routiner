@@ -38,9 +38,12 @@ function buildMonthItems(): DrumItem[] {
 
 export function FastingCard() {
   const c = useThemeColors();
-  const { status, startedAt, goalHours, records, setGoalHours, startFasting, stopFasting, updateStartTime } =
-    useFastingStore();
-  const { profile } = useUserStore();
+  const status = useFastingStore((s) => s.status);
+  const startedAt = useFastingStore((s) => s.startedAt);
+  const goalHours = useFastingStore((s) => s.goalHours);
+  const records = useFastingStore((s) => s.records);
+  const profile = useUserStore((s) => s.profile);
+  const { setGoalHours, startFasting, stopFasting, updateStartTime } = useFastingStore.getState();
   const [now, setNow] = useState(Date.now());
   const [expanded, setExpanded] = useState(false);
   const [editStartVisible, setEditStartVisible] = useState(false);

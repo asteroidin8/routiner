@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { LogBox, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import { AppAlert } from '@/components/AppAlert';
 import { AppEffectsBridge } from '@/components/AppEffectsBridge';
@@ -61,15 +62,17 @@ const SafeGestureRoot = GestureHandlerRootView ?? View;
 
 export default function RootLayout() {
   return (
-    <SafeGestureRoot style={{ flex: 1 }}>
-      <AppErrorBoundary>
-        <AuthProvider>
-          <CloudSyncBridge />
-          <AppEffectsBridge />
-          <AppContent />
-          <AppAlert />
-        </AuthProvider>
-      </AppErrorBoundary>
-    </SafeGestureRoot>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <SafeGestureRoot style={{ flex: 1 }}>
+        <AppErrorBoundary>
+          <AuthProvider>
+            <CloudSyncBridge />
+            <AppEffectsBridge />
+            <AppContent />
+            <AppAlert />
+          </AuthProvider>
+        </AppErrorBoundary>
+      </SafeGestureRoot>
+    </SafeAreaProvider>
   );
 }

@@ -25,7 +25,7 @@ export default function HomeScreen() {
 
   const { navigateTo } = useTabNavigation();
   const { user } = useAuth();
-  const { profile } = useUserStore();
+  const profile = useUserStore((s) => s.profile);
   const isProfileBannerVisible = isProfileIncomplete(profile);
 
   const boards = useBoardStore((s) => s.boards);
