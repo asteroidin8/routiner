@@ -294,3 +294,31 @@ C  ??????????????  41%
 - `colors.ts` + `useThemeColors()` ?⑥씪 ?좏겙
 - `spacing.ts` ??radius/size/opacity ?좏겙 ?쒖슜
 - Zustand + AsyncStorage ?곹깭 愿由?- Supabase ?몄쬆 + ?대씪?곕뱶 ?숆린??
+
+---
+
+## 리팩토링 현황 (2026-06-25)
+
+### 완료된 리팩토링
+
+| # | 항목 | 파일 | 내용 |
+|---|------|------|------|
+| 1 | 탭 아키텍처 전면 리팩토링 | `app/(tabs)/_layout.tsx` | lazy mount + display:none + 공유 SafeAreaView — 탭 전환 시 화면 깜박임/리마운트 제거 |
+| 2 | 탭 화면 SafeAreaView 제거 | `app/(tabs)/board.tsx`, `index.tsx`, `routine.tsx`, `stats.tsx`, `todo.tsx` | 개별 SafeAreaView 제거, `<View style={{ flex: 1 }}>` 통일 |
+| 3 | todo.tsx 이중 return 통합 | `app/(tabs)/todo.tsx` | completed filter / active filter 두 return 경로를 단일 return으로 병합 |
+| 4 | Store 피드백 루프 수정 | `src/services/board/boardService.ts` | `pushDailyProgress()`에서 로컬 `upsertProgress()` 호출 제거 — DB→Realtime→store 루프 차단 |
+| 5 | upsertProgress 동등성 체크 | `src/stores/useBoardStore.ts` | `get()`으로 기존 데이터와 비교 후 변경 시에만 `set()` 호출 |
+| 6 | useBoardProgressSync 디바운스 | `src/hooks/useBoardProgressSync.ts` | store subscription에 500ms 디바운스 적용 — 365일 streak 루프 빈도 감소 |
+| 7 | useWidgetSync 명령형 전환 | `src/widgets/useWidgetSync.ts` | React hook → Zustand `.subscribe()` API — AppEffectsBridge 리렌더 제거 |
+| 8 | Realtime 에코 필터링 | `src/hooks/useRealtimeSync.ts` | routines/todos/completions 세 테이블 모두 동등성 체크 후 store 업데이트 |
+| 9 | useBoardRealtimeSync 동등성 체크 | `src/hooks/useBoardRealtimeSync.ts` | member INSERT(중복 방지)/UPDATE(nickname·role 비교)/DELETE(존재 확인) 동등성 체크 추가 |
+| 10 | 보드 페이지 이중 return 통합 | `app/board/create.tsx`, `app/board/join.tsx` | 이중 SafeAreaView return → 단일 SafeAreaView + 조건부 content |
+
+### 미진행 리팩토링 / 개선 과제
+
+| # | 항목 | 파일 | 설명 |
+|---|------|------|------|
+| 1 | 설정 시간 형식 AM/PM 반영 | `TimePickerModal` 관련 | 12시간제 선택 시 휠피커 3열 구조 (오전/오후 > 시 > 분) |
+| 2 | Stats 카드 기간 기준 재설계 | `app/(tabs)/stats.tsx`, `app/stats/` | 메인 카드 = 일간, 상세 페이지 = 주간/월간 + 기간 필터 + 날짜 범위 표시 |
+| 3 | Stats 단식 횟수 기준 변경 | `app/(tabs)/stats.tsx` | 완료만 → 전체 시도 횟수("기록 N회") |
+| 4 | 루틴/할일 상세 통계 페이지 통일 | `app/stats/routine.tsx`, `app/stats/todo.tsx` | 두 상세 페이지 구조 일관성 (기간 필터, 날짜 범위 표시) |
