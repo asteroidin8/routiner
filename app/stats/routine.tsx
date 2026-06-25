@@ -1,7 +1,9 @@
-import { Dimensions, ScrollView, View } from 'react-native';
+import { useState } from 'react';
+import { Dimensions, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
+import { AppIcon } from '@/components/AppIcon';
 import { AppText } from '@/components/AppText';
 import { BarChart, type BarChartItem } from '@/components/BarChart';
 import { Card } from '@/components/Card';
@@ -17,11 +19,51 @@ import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { countBoardRoutinesTotal, countBoardCompletionsForDate } from '@/utils/boardRoutineStats';
 import { localDateStr } from '@/utils/dateFormat';
-import { toDateStr } from '@/utils/homeDailyBoard';
 import { isRoutineScheduledForDate } from '@/utils/routineSchedule';
 
 const L = STATS_LABELS;
 const SCREEN_WIDTH = Dimensions.get('window').width;
+
+type Period = 'weekly' | 'monthly';
+
+function getMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getPeriodRange(period: Period, offset: number) {
+  const now = new Date();
+  if (period === 'weekly') {
+    const monday = getMonday(now);
+    monday.setDate(monday.getDate() + offset * 7);
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6);
+    const label = `${monday.getMonth() + 1}/${monday.getDate()} ~ ${sunday.getMonth() + 1}/${sunday.getDate()}`;
+    const end = new Date(monday);
+    end.setDate(end.getDate() + 7);
+    return { start: monday, end, label };
+  }
+  const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 1);
+  const label = `${start.getFullYear()}년 ${start.getMonth() + 1}월`;
+  return { start, end, label };
+}
+
+function getDaysInRange(start: Date, end: Date): Date[] {
+  const days: Date[] = [];
+  const d = new Date(start);
+  const now = new Date();
+  now.setHours(23, 59, 59, 999);
+  while (d < end && d <= now) {
+    days.push(new Date(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return days;
+}
 
 export default function RoutineDetailScreen() {
   const c = useThemeColors();
@@ -33,29 +75,52 @@ export default function RoutineDetailScreen() {
   const boardRoutines = useBoardStore((s) => s.routines);
   const boardLogs = useBoardStore((s) => s.logs);
 
-  const now = new Date();
-  const todayRoutines = routines.filter((r) => isRoutineScheduledForDate(r, now));
-  const maxStreak = routines.reduce((max, r) => Math.max(max, getStreak(r.id, r)), 0);
+  const [period, setPeriod] = useState<Period>('weekly');
+  const [offset, setOffset] = useState(0);
 
-  const todayStr = toDateStr(new Date());
-  const last7Days: BarChartItem[] = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const ds = toDateStr(d);
+  const now = new Date();
+  const isCurrent = offset === 0;
+  const { start, end, label: periodLabel } = getPeriodRange(period, offset);
+  const daysInPeriod = getDaysInRange(start, end);
+
+  let totalScheduled = 0;
+  let totalCompleted = 0;
+  for (const day of daysInPeriod) {
+    const ds = localDateStr(day);
+    const scheduled = routines.filter((r) => isRoutineScheduledForDate(r, day));
+    const completed = scheduled.filter((r) => isCompleted(r.id, ds)).length;
+    totalScheduled += scheduled.length;
+    totalCompleted += completed;
+  }
+  const completionRate = totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 100) : 0;
+
+  const maxStreak = routines.reduce((max, r) => Math.max(max, getStreak(r.id, r)), 0);
+  const todayRoutines = routines.filter((r) => isRoutineScheduledForDate(r, now));
+
+  const chartDays = period === 'weekly' ? daysInPeriod : daysInPeriod.slice(-7);
+  const chartData: BarChartItem[] = chartDays.map((d) => {
+    const ds = localDateStr(d);
     const scheduled = routines.filter((r) => isRoutineScheduledForDate(r, d));
     const completed = scheduled.filter((r) => isCompleted(r.id, ds)).length;
     return {
       label: WEEKDAY_SHORT[d.getDay()],
       value: completed,
-      isToday: ds === todayStr,
+      isToday: ds === localDateStr(now),
     };
   });
-  const hasChartData = last7Days.some((d) => d.value > 0);
+  const hasChartData = chartData.some((d) => d.value > 0);
 
   const boardTotal = countBoardRoutinesTotal(boardRoutines);
   const boardCompletedToday = user
     ? countBoardCompletionsForDate(boardLogs, user.id, localDateStr(now))
     : 0;
+
+  const todayStr = localDateStr(now);
+
+  function switchPeriod(p: Period) {
+    setPeriod(p);
+    setOffset(0);
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.surface }} edges={['top']}>
@@ -68,21 +133,67 @@ export default function RoutineDetailScreen() {
         }}
         showsVerticalScrollIndicator={false}
       >
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          {(['weekly', 'monthly'] as const).map((p) => (
+            <Pressable
+              key={p}
+              onPress={() => switchPeriod(p)}
+              style={{
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+                borderRadius: 8,
+                backgroundColor: period === p ? c.primary : c.surfaceMuted,
+              }}
+            >
+              <AppText
+                variant="caption"
+                style={{ color: period === p ? '#fff' : c.inkSecondary, fontWeight: '600' }}
+              >
+                {p === 'weekly' ? '주간' : '월간'}
+              </AppText>
+            </Pressable>
+          ))}
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          <Pressable onPress={() => setOffset((o) => o - 1)} hitSlop={8} style={{ padding: 4 }}>
+            <AppIcon name="ChevronLeft" size={18} color={c.inkSecondary} />
+          </Pressable>
+          <AppText variant="body" style={{ fontWeight: '700', minWidth: 120, textAlign: 'center' }}>
+            {periodLabel}
+          </AppText>
+          <Pressable
+            onPress={() => setOffset((o) => o + 1)}
+            hitSlop={8}
+            style={{ padding: 4, opacity: isCurrent ? 0.3 : 1 }}
+            disabled={isCurrent}
+          >
+            <AppIcon name="ChevronRight" size={18} color={c.inkSecondary} />
+          </Pressable>
+        </View>
+
         <View style={{ flexDirection: 'row', gap: spacing.gap }}>
-          <StatsSummaryCard label={L.totalRoutines} value={`${routines.length}${L.countUnit}`} />
-          <StatsSummaryCard label={L.todayRoutines} value={`${todayRoutines.length}${L.countUnit}`} />
+          <StatsSummaryCard label={L.completionRate} value={`${completionRate}%`} />
+          <StatsSummaryCard label={L.completed} value={`${totalCompleted}${L.timesUnit}`} />
           <StatsSummaryCard
             label={L.maxStreak}
             value={maxStreak > 0 ? `${maxStreak}${L.dayUnit}` : '-'}
           />
         </View>
 
+        {isCurrent && (
+          <View style={{ flexDirection: 'row', gap: spacing.gap }}>
+            <StatsSummaryCard label={L.totalRoutines} value={`${routines.length}${L.countUnit}`} />
+            <StatsSummaryCard label={L.todayRoutines} value={`${todayRoutines.length}${L.countUnit}`} />
+          </View>
+        )}
+
         {hasChartData && (
           <View style={{ gap: 8 }}>
             <AppText variant="caption" tone="tertiary">
-              최근 7일 완료 수
+              {period === 'weekly' ? '주간' : '최근 7일'} 완료 수
             </AppText>
-            <BarChart data={last7Days} width={SCREEN_WIDTH - 40} height={130} unit="개" />
+            <BarChart data={chartData} width={SCREEN_WIDTH - 40} height={130} unit="개" />
           </View>
         )}
 
@@ -90,8 +201,7 @@ export default function RoutineDetailScreen() {
           <View style={{ gap: 8 }}>
             {routines.map((r) => {
               const streak = getStreak(r.id, r);
-              const doneStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-              const done = isCompleted(r.id, doneStr);
+              const done = isCompleted(r.id, todayStr);
               return (
                 <Card key={r.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <View style={{ flex: 1, gap: 2 }}>
