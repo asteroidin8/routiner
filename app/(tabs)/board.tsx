@@ -15,7 +15,7 @@ import { useBoardStore } from '@/stores/useBoardStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useFollowStore } from '@/stores/useFollowStore';
 import { fetchMyBoards } from '@/services/board/boardService';
-import { fetchFollowing, fetchFriendProgress } from '@/services/social/followService';
+import { fetchFollowing, fetchFriendsBatchProgress } from '@/services/social/followService';
 import { BoardListSkeleton, FriendListSkeleton } from '@/components/Skeleton';
 import { feedbackRefresh } from '@/utils/microFeedback';
 import { getAvatarColor, getInitial } from '@/utils/avatarColor';
@@ -58,9 +58,8 @@ export default function BoardTabScreen() {
         await fetchMyBoards(user.id);
       } else {
         await fetchFollowing();
-        for (const f of following) {
-          void fetchFriendProgress(f.userId);
-        }
+        const ids = useFollowStore.getState().following.map((f) => f.userId);
+        await fetchFriendsBatchProgress(ids);
       }
     } finally {
       setRefreshing(false);
@@ -68,10 +67,8 @@ export default function BoardTabScreen() {
   }, [user?.id, tab, following]);
 
   useEffect(() => {
-    if (tab === 'friends') {
-      for (const f of following) {
-        void fetchFriendProgress(f.userId);
-      }
+    if (tab === 'friends' && following.length > 0) {
+      void fetchFriendsBatchProgress(following.map((f) => f.userId));
     }
   }, [tab, following]);
 
