@@ -1,7 +1,8 @@
 import type { Routine } from '@/stores/useRoutineStore';
 
 import type { BoardRoutineData } from './boardRoutineStats';
-import { getRoutineProgressForDate, toDateStr } from './homeDailyBoard';
+import { localDateStr } from './dateFormat';
+import { getRoutineProgressForDate } from './homeDailyBoard';
 
 export function getMonthRoutineStats(
   routines: Routine[],
@@ -20,7 +21,7 @@ export function getMonthRoutineStats(
 
   for (let day = 1; day <= maxDay; day++) {
     const date = new Date(year, month, day);
-    const dateStr = toDateStr(date);
+    const dateStr = localDateStr(date);
     const { completed, total } = getRoutineProgressForDate(
       dateStr,
       date.getDay(),

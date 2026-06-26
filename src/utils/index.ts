@@ -1,6 +1,5 @@
 export { groupFastingByDay, formatMinutes, formatHHMM } from './statsHelper';
 export type { CompletedFastingRecord, DailyFastingSummary } from './statsHelper';
-export { toDateStr } from './homeDailyBoard';
 export { formatDueDate, getDueDateColor, getTimeGreeting, getPriorityColor } from './dateFormat';
 export { formatMetric } from './formatMetric';
 export { isProfileIncomplete } from './profile';

@@ -4,7 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { COMPLETION_RETENTION_DAYS, MAX_STREAK_DAYS } from '@/constants/dataRetention';
 import type { Routine } from '@/types';
-import { toDateStr } from '@/utils/homeDailyBoard';
+import { localDateStr } from '@/utils/dateFormat';
 import { isRoutineScheduledForDate } from '@/utils/routineSchedule';
 
 function makeKey(routineId: string, date: string) {
@@ -57,7 +57,7 @@ export const useRoutineCompletionStore = create<RoutineCompletionStore>()(
 
         for (let i = 0; i < MAX_STREAK_DAYS; i++) {
           if (isRoutineScheduledForDate(routine, cursor)) {
-            const dateStr = toDateStr(cursor);
+            const dateStr = localDateStr(cursor);
             if (completions[makeKey(routineId, dateStr)]) {
               streak++;
             } else if (i === 0) {
@@ -75,7 +75,7 @@ export const useRoutineCompletionStore = create<RoutineCompletionStore>()(
       clearOldCompletions: () => {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - COMPLETION_RETENTION_DAYS);
-        const cutoffStr = toDateStr(cutoff);
+        const cutoffStr = localDateStr(cutoff);
         set((s) => {
           const next: Record<string, number> = {};
           for (const [key, ts] of Object.entries(s.completions)) {

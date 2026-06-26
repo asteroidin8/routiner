@@ -7,7 +7,8 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { getWeekDayDots, toDateStr, type DayDotStatus } from '@/utils/homeDailyBoard';
+import { localDateStr } from '@/utils/dateFormat';
+import { getWeekDayDots, type DayDotStatus } from '@/utils/homeDailyBoard';
 
 const CELL_SIZE = 14;
 const CELL_SIZE_TODAY = 16;
@@ -36,7 +37,7 @@ export function HomeWeeklyGrass() {
   useRoutineCompletionStore((s) => s.completions);
   const { isCompleted } = useRoutineCompletionStore.getState();
 
-  const todayStr = toDateStr(new Date());
+  const todayStr = localDateStr(new Date());
   const weekDots = getWeekDayDots(routines, isCompleted);
 
   return (

@@ -6,7 +6,7 @@ import type { Todo } from '@/stores/useTodoStore';
 
 import type { BoardRoutineData } from './boardRoutineStats';
 import { localDateStr } from './dateFormat';
-import { getRoutineProgressForDate, toDateStr } from './homeDailyBoard';
+import { getRoutineProgressForDate } from './homeDailyBoard';
 
 export type GrassLevel = 0 | 1 | 2 | 3 | 4;
 
@@ -92,7 +92,7 @@ export function buildMonthGrassMap(
 
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day);
-    const dateStr = toDateStr(date);
+    const dateStr = localDateStr(date);
     map.set(
       dateStr,
       getDailyGrassActivity(dateStr, date.getDay(), routines, isCompleted, todos, boardData, todoMap),

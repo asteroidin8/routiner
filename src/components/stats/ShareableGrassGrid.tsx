@@ -8,7 +8,7 @@ import { getCellBorderRadius, getCellTransform, getGrassColor } from '@/constant
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { grassCellColors, type DailyGrassActivity } from '@/utils/calendarGrass';
-import { toDateStr } from '@/utils/homeDailyBoard';
+import { localDateStr } from '@/utils/dateFormat';
 
 const CELL_SIZE = 40;
 const GAP = 6;
@@ -27,12 +27,12 @@ export const ShareableGrassGrid = forwardRef<View, Props>(function ShareableGras
   const c = useThemeColors();
   const grassShape = useSettingsStore((s) => s.grassShape);
   const grassHex = getGrassColor(useSettingsStore.getState().grassColor);
-  const today = toDateStr(new Date());
+  const today = localDateStr(new Date());
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells: (string | null)[] = [
     ...Array(firstDay).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => toDateStr(new Date(year, month, i + 1))),
+    ...Array.from({ length: daysInMonth }, (_, i) => localDateStr(new Date(year, month, i + 1))),
   ];
 
   const LEGEND_LEVELS = [0, 1, 2, 3, 4] as const;
