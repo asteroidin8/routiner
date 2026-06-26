@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { COMPLETION_RETENTION_DAYS, MAX_STREAK_DAYS } from '@/constants/dataRetention';
+import { getSupabase } from '@/lib/supabase';
 import type { Routine } from '@/types';
 import { localDateStr } from '@/utils/dateFormat';
 import { isRoutineScheduledForDate } from '@/utils/routineSchedule';
@@ -27,6 +28,7 @@ export const useRoutineCompletionStore = create<RoutineCompletionStore>()(
 
       toggleCompletion: (routineId, date) => {
         const key = makeKey(routineId, date);
+        const wasCompleted = !!get().completions[key];
         set((s) => {
           const next = { ...s.completions };
           if (next[key]) {
@@ -36,6 +38,12 @@ export const useRoutineCompletionStore = create<RoutineCompletionStore>()(
           }
           return { completions: next };
         });
+        if (wasCompleted) {
+          const supabase = getSupabase();
+          if (supabase) {
+            void supabase.from('routine_completions').delete().eq('completion_key', key);
+          }
+        }
       },
 
       isCompleted: (routineId, date) => {
