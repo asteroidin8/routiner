@@ -267,11 +267,15 @@ export async function pullCloudToLocal(userId: string): Promise<{ error?: string
   }
 
   if (routinesRes.data?.length) {
-    useRoutineStore.setState({
-      routines: routinesRes.data
-        .map((r) => routineFromRow(r as Record<string, unknown>))
-        .sort((a, b) => a.order - b.order),
-    });
+    const serverRoutines = routinesRes.data
+      .map((r) => routineFromRow(r as Record<string, unknown>));
+    const localRoutines = useRoutineStore.getState().routines;
+    const localIds = new Set(localRoutines.map((r) => r.id));
+    const merged = [
+      ...localRoutines,
+      ...serverRoutines.filter((r) => !localIds.has(r.id)),
+    ].sort((a, b) => a.order - b.order);
+    useRoutineStore.setState({ routines: merged });
   }
 
   if (todoGroupsRes.data?.length) {
@@ -288,19 +292,25 @@ export async function pullCloudToLocal(userId: string): Promise<{ error?: string
   }
 
   if (todosRes.data?.length) {
-    useTodoStore.setState({
-      todos: todosRes.data
-        .map((t) => todoFromRow(t as Record<string, unknown>))
-        .sort((a, b) => a.order - b.order),
-    });
+    const serverTodos = todosRes.data
+      .map((t) => todoFromRow(t as Record<string, unknown>));
+    const localTodos = useTodoStore.getState().todos;
+    const localTodoIds = new Set(localTodos.map((t) => t.id));
+    const mergedTodos = [
+      ...localTodos,
+      ...serverTodos.filter((t) => !localTodoIds.has(t.id)),
+    ].sort((a, b) => a.order - b.order);
+    useTodoStore.setState({ todos: mergedTodos });
   }
 
   if (completionsRes.data?.length) {
-    const map: Record<string, number> = {};
+    const serverMap: Record<string, number> = {};
     for (const row of completionsRes.data) {
-      map[row.completion_key] = row.completed_at;
+      serverMap[row.completion_key] = row.completed_at;
     }
-    useRoutineCompletionStore.setState({ completions: map });
+    const localCompletions = useRoutineCompletionStore.getState().completions;
+    const merged = { ...serverMap, ...localCompletions };
+    useRoutineCompletionStore.setState({ completions: merged });
   }
 
   if (fastingRes.data?.length) {
