@@ -124,13 +124,11 @@ export default function MyScreen() {
         useSettingsStore.setState({
           grassColor: 'green',
           grassShape: 'default',
-          grassAnimation: 'none',
         });
         useProStore.setState({
           isPro: false,
           purchasedColors: [],
           purchasedShapes: [],
-          purchasedAnimations: [],
         });
       }},
     ]);

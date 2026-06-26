@@ -153,12 +153,21 @@ export default function StatsScreen() {
   const hasWeight = profile.weightKg != null && profile.targetWeightKg != null;
 
   const visibleCards = useMemo(
-    () => cards.filter((c) => c.visible && (c.id !== 'weight' || hasWeight)),
-    [cards, hasWeight],
+    () => cards.filter((c) => c.visible && (c.id !== 'weight' || hasWeight) && (c.id !== 'insights' || isPro)),
+    [cards, hasWeight, isPro],
   );
 
   function renderCardById(id: StatsCardId) {
     switch (id) {
+      case 'insights':
+        if (insights.length === 0) return null;
+        return (
+          <View key="insights" style={{ gap: spacing.sm }}>
+            {insights.map((insight) => (
+              <InsightCard key={insight.type} insight={insight} />
+            ))}
+          </View>
+        );
       case 'fasting':
         return (
           <StatCard
@@ -255,14 +264,6 @@ export default function StatsScreen() {
         </View>
 
         <StatsBentoStats />
-
-        {insights.length > 0 && (
-          <View style={{ gap: spacing.sm }}>
-            {insights.map((insight) => (
-              <InsightCard key={insight.type} insight={insight} />
-            ))}
-          </View>
-        )}
 
         {isDataEmpty ? (
           <EmptyState
@@ -395,6 +396,14 @@ export default function StatsScreen() {
             <View style={{ gap: spacing.md }}>
               {visibleCards.map((card) => renderCardById(card.id))}
             </View>
+
+            {insights.length > 0 && !visibleCards.some((c) => c.id === 'insights') && (
+              <View style={{ gap: spacing.sm }}>
+                {insights.map((insight) => (
+                  <InsightCard key={insight.type} insight={insight} />
+                ))}
+              </View>
+            )}
           </>
         )}
       </ScrollView>
