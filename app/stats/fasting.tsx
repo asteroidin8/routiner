@@ -19,7 +19,6 @@ import type { FastingRecord } from '@/types';
 import { useFastingStore } from '@/stores/useFastingStore';
 import { formatMinutes, groupFastingByDay } from '@/utils/statsHelper';
 import { localDateStr } from '@/utils/dateFormat';
-import { toDateStr } from '@/utils/homeDailyBoard';
 
 const L = STATS_LABELS;
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -53,7 +52,7 @@ export default function FastingDetailScreen() {
         )
       : 0;
 
-  const todayDateStr = toDateStr(new Date());
+  const todayDateStr = localDateStr(new Date());
   const last7Days: BarChartItem[] = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));

@@ -8,7 +8,7 @@ import { spacing } from '@/constants/spacing';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { grassCellColors, type DailyGrassActivity } from '@/utils/calendarGrass';
-import { toDateStr } from '@/utils/homeDailyBoard';
+import { localDateStr } from '@/utils/dateFormat';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_BORDER = 4;
 const CELL_SIZE = Math.floor((SCREEN_WIDTH - SCREEN_BORDER - 40 - 6 * 6) / 7);
@@ -25,12 +25,12 @@ export function StatsMonthGrid({ year, month, grassMap, hasFastingRecord, onSele
   const c = useThemeColors();
   const grassShape = useSettingsStore((s) => s.grassShape);
   const grassHex = getGrassColor(useSettingsStore((s) => s.grassColor));
-  const today = toDateStr(new Date());
+  const today = localDateStr(new Date());
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells: (string | null)[] = [
     ...Array(firstDay).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => toDateStr(new Date(year, month, i + 1))),
+    ...Array.from({ length: daysInMonth }, (_, i) => localDateStr(new Date(year, month, i + 1))),
   ];
 
   const LEGEND_LEVELS = [0, 1, 2, 3, 4] as const;

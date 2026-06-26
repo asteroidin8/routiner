@@ -15,9 +15,8 @@ export type WeekDayDot = {
   routineTotal: number;
 };
 
-export function toDateStr(date: Date) {
-  return localDateStr(date);
-}
+/** @deprecated localDateStr을 직접 사용하세요 */
+export const toDateStr = localDateStr;
 
 function isActiveOnDate(item: { deletedAt?: number }, dateStr: string): boolean {
   if (!item.deletedAt) return true;
@@ -31,14 +30,28 @@ export function getRoutineProgressForDate(
   isCompleted: (routineId: string, date: string) => boolean,
 ) {
   const date = new Date(dateStr + 'T12:00:00');
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  const isPast = date < today && localDateStr(date) !== localDateStr(today);
+
   const dayRoutines = routines.filter(
     (r) => isActiveOnDate(r, dateStr) && isRoutineScheduledForDate(r, date),
   );
+  const scheduledCompleted = dayRoutines.filter((r) => isCompleted(r.id, dateStr)).length;
+
+  if (isPast) {
+    const allCompleted = routines.filter(
+      (r) => isActiveOnDate(r, dateStr) && isCompleted(r.id, dateStr),
+    );
+    const completed = allCompleted.length;
+    const total = Math.max(dayRoutines.length, completed);
+    return { completed, total };
+  }
+
   if (dayRoutines.length === 0) {
     return { completed: 0, total: 0 };
   }
-  const completed = dayRoutines.filter((r) => isCompleted(r.id, dateStr)).length;
-  return { completed, total: dayRoutines.length };
+  return { completed: scheduledCompleted, total: dayRoutines.length };
 }
 
 export function getDayDotStatus(completed: number, total: number): DayDotStatus {
@@ -65,7 +78,7 @@ export function getWeekDayDots(
   for (let i = 0; i < 7; i++) {
     const date = new Date(monday);
     date.setDate(monday.getDate() + i);
-    const dateStr = toDateStr(date);
+    const dateStr = localDateStr(date);
     const dayOfWeek = date.getDay();
     const { completed, total } = getRoutineProgressForDate(dateStr, dayOfWeek, routines, isCompleted);
 
@@ -92,7 +105,7 @@ export function getRoutineStreakDays(
   cursor.setHours(12, 0, 0, 0);
 
   for (let i = 0; i < 365; i++) {
-    const dateStr = toDateStr(cursor);
+    const dateStr = localDateStr(cursor);
     const dayOfWeek = cursor.getDay();
     const { completed, total } = getRoutineProgressForDate(dateStr, dayOfWeek, routines, isCompleted);
     const boardCompleted = boardData?.getCompleted(dateStr) ?? 0;
