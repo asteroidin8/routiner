@@ -139,7 +139,46 @@ export async function fetchFriendProgress(
     .gte('date', since);
   if (error) return { error: error.message };
 
-  const progress: UserDailyProgress[] = (data ?? []).map((r) => ({
+  const progress = mapProgressRows(data ?? []);
+  useFollowStore.getState().setFriendProgress(targetUserId, progress);
+
+  return {};
+}
+
+export async function fetchFriendsBatchProgress(
+  userIds: string[],
+): Promise<{ error?: string }> {
+  if (userIds.length === 0) return {};
+  const supabase = getSupabase();
+  if (!supabase) return { error: 'Supabase 미설정' };
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+  const since = localDateStr(thirtyDaysAgo);
+
+  const { data, error } = await supabase
+    .from('user_daily_progress')
+    .select('*')
+    .in('user_id', userIds)
+    .gte('date', since);
+  if (error) return { error: error.message };
+
+  const grouped: Record<string, UserDailyProgress[]> = {};
+  for (const id of userIds) grouped[id] = [];
+  for (const row of mapProgressRows(data ?? [])) {
+    if (grouped[row.userId]) grouped[row.userId].push(row);
+  }
+
+  const store = useFollowStore.getState();
+  for (const [userId, progress] of Object.entries(grouped)) {
+    store.setFriendProgress(userId, progress);
+  }
+
+  return {};
+}
+
+function mapProgressRows(data: Record<string, unknown>[]): UserDailyProgress[] {
+  return data.map((r) => ({
     userId: String(r.user_id),
     date: String(r.date),
     routineCompleted: Number(r.routine_completed),
@@ -148,9 +187,6 @@ export async function fetchFriendProgress(
     todoTotal: Number(r.todo_total),
     streak: Number(r.streak),
   }));
-  useFollowStore.getState().setFriendProgress(targetUserId, progress);
-
-  return {};
 }
 
 export async function pushPersonalProgress(
