@@ -3,7 +3,9 @@ import { BackHandler, Platform, ToastAndroid, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
 
+import { SkeletonBox } from '@/components/Skeleton';
 import { TabBar } from '@/components/TabBar';
+import { useAppHydrated } from '@/hooks/useAppHydrated';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import {
   invokeTabBackHandler,
@@ -25,6 +27,7 @@ const SCREENS = [BoardTabScreen, RoutineScreen, HomeScreen, TodoScreen, StatsScr
 
 export default function TabLayout() {
   const c = useThemeColors();
+  const hydrated = useAppHydrated();
   const [activeTab, setActiveTab] = useState<TabIndex>(HOME_INDEX);
   const [mountedTabs, setMountedTabs] = useState<Set<TabIndex>>(() => new Set([HOME_INDEX]));
   const [tabBarVisible, setTabBarVisible] = useState(true);
@@ -95,18 +98,27 @@ export default function TabLayout() {
     <TabNavigationContext.Provider value={contextValue}>
       <View style={{ flex: 1, backgroundColor: c.surface }}>
         <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-          {SCREENS.map((Screen, i) => {
-            const idx = i as TabIndex;
-            if (!mountedTabs.has(idx)) return null;
-            return (
-              <View
-                key={idx}
-                style={{ flex: 1, display: activeTab === idx ? 'flex' : 'none' }}
-              >
-                <Screen />
-              </View>
-            );
-          })}
+          {!hydrated ? (
+            <View style={{ flex: 1, padding: 20, gap: 16, paddingTop: 48 }}>
+              <SkeletonBox height={40} rounded="lg" />
+              <SkeletonBox height={80} rounded="lg" />
+              <SkeletonBox height={120} rounded="lg" />
+              <SkeletonBox height={60} rounded="lg" />
+            </View>
+          ) : (
+            SCREENS.map((Screen, i) => {
+              const idx = i as TabIndex;
+              if (!mountedTabs.has(idx)) return null;
+              return (
+                <View
+                  key={idx}
+                  style={{ flex: 1, display: activeTab === idx ? 'flex' : 'none' }}
+                >
+                  <Screen />
+                </View>
+              );
+            })
+          )}
         </SafeAreaView>
         {tabBarVisible && <TabBar activeTab={activeTab} onPress={handleTabPress} />}
       </View>
