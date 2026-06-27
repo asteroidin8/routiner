@@ -1,14 +1,17 @@
 import { View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
+import { TodayProgressRing } from '@/components/home/TodayProgressRing';
 import { getGrassColor, getGrassNeonGlow, getCellBorderRadius } from '@/constants/grassTheme';
 import { opacity, radius, spacing } from '@/constants/spacing';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
+import { useTodoStore } from '@/stores/useTodoStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { localDateStr } from '@/utils/dateFormat';
 import { getWeekDayDots, type DayDotStatus } from '@/utils/homeDailyBoard';
+import { isRoutineScheduledForDate } from '@/utils/routineSchedule';
 
 const CELL_SIZE = 14;
 const CELL_SIZE_TODAY = 16;
@@ -37,8 +40,23 @@ export function HomeWeeklyGrass() {
   useRoutineCompletionStore((s) => s.completions);
   const { isCompleted } = useRoutineCompletionStore.getState();
 
+  const todos = useTodoStore((s) => s.todos);
   const todayStr = localDateStr(new Date());
   const weekDots = getWeekDayDots(routines, isCompleted);
+
+  const now = new Date();
+  const todayRoutines = routines.filter(
+    (r) => !r.deletedAt && isRoutineScheduledForDate(r, now),
+  );
+  const routineCompleted = todayRoutines.filter((r) => isCompleted(r.id, todayStr)).length;
+  const activeTodos = todos.filter((t) => !t.deletedAt && !t.completedAt);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayCompletedTodos = todos.filter(
+    (t) => !t.deletedAt && t.completedAt && t.completedAt >= todayStart.getTime(),
+  );
+  const totalItems = todayRoutines.length + activeTodos.length + todayCompletedTodos.length;
+  const completedItems = routineCompleted + todayCompletedTodos.length;
 
   return (
     <View>
@@ -50,10 +68,16 @@ export function HomeWeeklyGrass() {
           borderColor: c.border,
           paddingHorizontal: spacing.item,
           paddingVertical: spacing.card,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.card,
         }}
       >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          {weekDots.map((dot, index) => {
+        {totalItems > 0 && (
+          <TodayProgressRing completed={completedItems} total={totalItems} />
+        )}
+        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
+          {weekDots.map((dot) => {
             const isToday = dot.dateStr === todayStr;
             const colors = cellColor(dot.status, c, grassHex);
             const cellSize = isToday ? CELL_SIZE_TODAY : CELL_SIZE;

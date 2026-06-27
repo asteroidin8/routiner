@@ -2,21 +2,31 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 
+import { ConfettiCelebration } from '@/components/ConfettiCelebration';
 import { DailySummaryRow } from '@/components/DailySummaryRow';
 import { FastingCard } from '@/components/FastingCard';
 import { HomeTopBar } from '@/components/home/HomeTopBar';
 import { HomeWeeklyGrass } from '@/components/home/HomeWeeklyGrass';
 import { InfoBanner } from '@/components/InfoBanner';
 import { SkeletonBox } from '@/components/Skeleton';
+import {
+  StreakMilestoneModal,
+  getUnseenMilestone,
+  type StreakMilestone,
+} from '@/components/StreakMilestoneModal';
 import { spacing } from '@/constants/spacing';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useTabNavigation, useTabScrollToTop } from '@/contexts/TabNavigationContext';
 import { useBoardStore } from '@/stores/useBoardStore';
+import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
+import { useRoutineStore } from '@/stores/useRoutineStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { fetchMyBoards } from '@/services/board/boardService';
 import { fetchBoardRoutines, fetchVerificationLogs } from '@/services/board/boardRoutineService';
 import { localDateStr } from '@/utils/dateFormat';
-import { feedbackRefresh } from '@/utils/microFeedback';
+import { getRoutineStreakDays } from '@/utils/homeDailyBoard';
+import { feedbackRefresh, feedbackSuccess } from '@/utils/microFeedback';
 import { isProfileIncomplete } from '@/utils/profile';
 
 const TAB_INDEX = 2 as const;
@@ -29,6 +39,35 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const profile = useUserStore((s) => s.profile);
   const isProfileBannerVisible = isProfileIncomplete(profile);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [milestoneToShow, setMilestoneToShow] = useState<StreakMilestone | null>(null);
+
+  const routines = useRoutineStore((s) => s.routines);
+  useRoutineCompletionStore((s) => s.completions);
+  const celebratedStreaks = useSettingsStore((s) => s.celebratedStreaks);
+
+  const handleAllComplete = useCallback(() => {
+    feedbackSuccess();
+    setShowConfetti(true);
+
+    const { isCompleted } = useRoutineCompletionStore.getState();
+    const streak = getRoutineStreakDays(routines, isCompleted);
+    const unseen = getUnseenMilestone(streak, celebratedStreaks);
+    if (unseen) {
+      setTimeout(() => setMilestoneToShow(unseen), 800);
+    }
+  }, [routines, celebratedStreaks]);
+
+  const handleConfettiFinish = useCallback(() => {
+    setShowConfetti(false);
+  }, []);
+
+  const handleMilestoneClose = useCallback(() => {
+    if (milestoneToShow) {
+      useSettingsStore.getState().markStreakCelebrated(milestoneToShow);
+    }
+    setMilestoneToShow(null);
+  }, [milestoneToShow]);
 
   const boards = useBoardStore((s) => s.boards);
   const allRoutines = useBoardStore((s) => s.routines);
@@ -77,8 +116,8 @@ export default function HomeScreen() {
     }
     let count = 0;
     for (const board of boards) {
-      const routines = allRoutines[board.id] ?? [];
-      for (const routine of routines) {
+      const boardRoutines = allRoutines[board.id] ?? [];
+      for (const routine of boardRoutines) {
         if (!verified.has(`${board.id}:${routine.id}`)) count++;
       }
     }
@@ -135,10 +174,21 @@ export default function HomeScreen() {
 
         <FastingCard />
 
-        <DailySummaryRow onRoutinePress={() => navigateTo(1)} onTodoPress={() => navigateTo(3)} />
+        <DailySummaryRow
+          onRoutinePress={() => navigateTo(1)}
+          onTodoPress={() => navigateTo(3)}
+          onAllComplete={handleAllComplete}
+        />
         </>
         )}
       </ScrollView>
+      <ConfettiCelebration visible={showConfetti} onFinish={handleConfettiFinish} />
+      <StreakMilestoneModal
+        milestone={milestoneToShow ?? 7}
+        streak={getRoutineStreakDays(routines, useRoutineCompletionStore.getState().isCompleted)}
+        visible={milestoneToShow !== null}
+        onClose={handleMilestoneClose}
+      />
     </View>
   );
 }
