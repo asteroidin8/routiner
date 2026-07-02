@@ -4,6 +4,7 @@ import { useRoutineCompletionStore } from '@/stores/useRoutineCompletionStore';
 import { useRoutineStore } from '@/stores/useRoutineStore';
 import { useTodoStore } from '@/stores/useTodoStore';
 import { useUserStore } from '@/stores/useUserStore';
+import { useAvatarStore } from '@/stores/useAvatarStore';
 import { withCloudSyncSuppressed } from '@/services/sync/cloudSyncGuard';
 import { routineFromRow, todoFromRow } from '@/utils/rowMappers';
 
@@ -31,6 +32,8 @@ export async function pushLocalToCloud(userId: string): Promise<{ error?: string
 
   const now = new Date().toISOString();
 
+  const avatarId = useAvatarStore.getState().equippedId || null;
+
   const { error: profileError } = await supabase.from('profiles').upsert({
     user_id: userId,
     height_cm: profile.heightCm,
@@ -39,6 +42,7 @@ export async function pushLocalToCloud(userId: string): Promise<{ error?: string
     age_years: profile.ageYears,
     is_male: profile.isMale,
     nickname: profile.nickname,
+    avatar_id: avatarId,
     updated_at: now,
   });
   if (profileError) return { error: profileError.message };
@@ -166,6 +170,19 @@ export async function pushLocalToCloud(userId: string): Promise<{ error?: string
   });
 }
 
+export async function updateAvatarInCloud(
+  userId: string,
+  avatarId: string | null,
+): Promise<{ error?: string }> {
+  const supabase = getSupabase();
+  if (!supabase) return {};
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({ user_id: userId, avatar_id: avatarId || null, updated_at: new Date().toISOString() });
+  if (error) return { error: error.message };
+  return {};
+}
+
 export async function deleteCloudRecord(
   table: string,
   id: string,
@@ -213,6 +230,9 @@ export async function pullCloudToLocal(userId: string): Promise<{ error?: string
         nickname: (p.nickname as string | null) ?? null,
       },
     });
+    if (p.avatar_id && typeof p.avatar_id === 'string') {
+      useAvatarStore.getState().equip(p.avatar_id);
+    }
   }
 
   if (routineGroupsRes.data?.length) {
